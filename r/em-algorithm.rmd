@@ -1,0 +1,63 @@
+# EM algorithm for Gaussian Mixture Model
+
+### Data import and visualization
+```{R}
+myData = read.csv("D:/Projects/EM-algorithm/Iris.csv", header = TRUE, sep = ",") 
+Y = myData$PetalWidthCm
+```
+
+```{R}
+plot(hist(Y, breaks = 32))
+```
+
+### Algorithm implementation
+```{R}
+N=length(Y)
+y=as.matrix(Y,nrow=N)
+# Get Basic summary statistics
+# Initalize first guess
+# Mixing parameter pi
+# Use random sample for random mu, estimator for variance
+ybar=mean(Y)
+pi=0.5
+mu1=sample(Y,1)
+mu2=sample(Y,1)
+var1=sum(((Y-ybar)^2)/N)
+var2=sum(((Y-ybar)^2)/N)
+# initial guess (random)
+init_guess=c(pi,mu1,mu2,var1,var2)
+
+makeEM=function(Y,parameters,iter){
+  #Responsiblity 
+  responsibility=matrix(0,nrow=N)
+  for(j in 1:iter){
+  for(i in 1:N){
+  model2=parameters[1]* dnorm(Y[i],mean=parameters[3],sd=sqrt(parameters[5]))
+  model1=(1-parameters[1])*dnorm(Y[i],mean=parameters[2],sd=sqrt(parameters[4]))
+  responsibility[i]=model2/(model1+model2)
+}
+  R=responsibility
+  mu1=sum((1-R)*Y)/sum(1-R)
+  mu2=sum(R*Y)/sum(R)
+  var1=sum((1-R)*(Y-mu1)^2)/sum(1-R)
+  var2=sum(R*(Y-mu2)^2)/sum(R)
+  pi=sum(R)/N
+  parameters=c(pi,mu1,mu2,var1,var2)
+}
+  return(parameters)
+}
+# Run on iterations
+runEM=makeEM(Y,init_guess,iter=2222)
+```
+
+### Results visualization
+```{R}
+hist(Y, prob=T, breaks=32, Ylim=c(range(Y)[1], range(Y)[2]), main='')
+lines(density(Y), col="#346e90", lwd=2)
+x1 <- seq(from=range(Y)[1], to=range(Y)[2], length.out=length(Y))
+y <- runEM[1] * dnorm(x1, mean=runEM[2], sd=sqrt(runEM[4])) + runEM[1] * dnorm(x1, mean=runEM[3], sd=sqrt(runEM[5]))
+
+lines(x1, y, col="red", lwd=2)
+
+legend('topright', col=c("#346e90", 'red'), lwd=2, legend=c("kernal", "fitted"))
+```
