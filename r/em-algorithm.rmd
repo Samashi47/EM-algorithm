@@ -3,51 +3,85 @@
 ### Data import and visualization
 ```{R}
 myData = read.csv("D:/Projects/EM-algorithm/data/Iris.csv", header = TRUE, sep = ",") 
-Y = myData$PetalWidthCm
-```
-
-```{R}
-plot(hist(Y, breaks = 32))
 ```
 
 ### Algorithm implementation
 ```{R}
+#-------------------------------- Expectation-Step ---------------------------------
+expectation <- function(data_sample, p, mu_1, mu_2, var_1, var_2) {
+  p_expectation <- (p * dnorm(data_sample, mean = mu_2, sd = sqrt(var_2))) / (p * dnorm(data_sample, mean = mu_2, sd = sqrt(var_2)) + (1 - p) * dnorm(data_sample, mean = mu_1, sd = sqrt(var_1)))
+  return(p_expectation)
+}
+
+#-------------------------------- Maximization-Step --------------------------------
+maximization <- function(sample,epart) {
+  mu_1 <- sum((1 - epart) * sample) / sum(1 - epart)
+  mu_2 <- sum(epart * sample) / sum(epart)
+  var_1 <- sum((1 - epart) * (sample - mu_1)^2) / sum(1 - epart)
+  var_2 <- sum(epart * (sample - mu_2)^2) / sum(epart)
+  p <- sum(epart) / length(sample)
+  return(c(p, mu_1, mu_2, var_1, var_2))
+}
+
+#------------------------ Expectation-Maximization Algorithm -----------------------
+EM <- function(Y, parameters, iter, tol=1e-6){
+  # Flag to check convergence
+  flag <- 0
+  # Responsiblity 
+  responsibility = matrix(0, nrow=length(Y))
+  for(j in 1:iter) {
+    for(i in 1:length(Y)) {
+      responsibility[i] = expectation(Y[i], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5])
+    }
+    old_parameters = parameters
+    parameters = maximization(Y, responsibility)
+
+    if(all(abs(parameters - old_parameters) < tol)) {
+      flag <- 1
+      break
+    }
+  }
+  if(!flag) {
+    warning("Stopped at iteration ", j, "\nDidn't converge\n")
+  }
+
+  return(parameters)
+}
+```
+
+
+### Sample choice
+```{R}
+Y = myData$SepalLengthCm
+```
+
+### Data visualization
+```{R}
+plot(hist(Y, breaks = 32))
+```
+
+### Run EM algorithm
+```{R}
 N=length(Y)
-y=as.matrix(Y,nrow=N)
+y=as.matrix(Y, nrow=N)
+
 # Get Basic summary statistics
 # Initalize first guess
 # Mixing parameter pi
 # Use random sample for random mu, estimator for variance
+
 ybar=mean(Y)
 pi=0.5
-mu1=sample(Y,1)
-mu2=sample(Y,1)
-var1=sum(((Y-ybar)^2)/N)
-var2=sum(((Y-ybar)^2)/N)
-# initial guess (random)
-init_guess=c(pi,mu1,mu2,var1,var2)
+mu1=sample(Y, 1)
+mu2=sample(Y, 1)
+var1=sum(((Y - ybar)^2) / N)
+var2=sum(((Y - ybar)^2) / N)
 
-makeEM=function(Y,parameters,iter){
-  #Responsiblity 
-  responsibility=matrix(0,nrow=N)
-  for(j in 1:iter){
-  for(i in 1:N){
-  model2=parameters[1]* dnorm(Y[i],mean=parameters[3],sd=sqrt(parameters[5]))
-  model1=(1-parameters[1])*dnorm(Y[i],mean=parameters[2],sd=sqrt(parameters[4]))
-  responsibility[i]=model2/(model1+model2)
-}
-  R=responsibility
-  mu1=sum((1-R)*Y)/sum(1-R)
-  mu2=sum(R*Y)/sum(R)
-  var1=sum((1-R)*(Y-mu1)^2)/sum(1-R)
-  var2=sum(R*(Y-mu2)^2)/sum(R)
-  pi=sum(R)/N
-  parameters=c(pi,mu1,mu2,var1,var2)
-}
-  return(parameters)
-}
+# initial guess (random)
+init_guess=c(pi, mu1, mu2, var1, var2)
+
 # Run on iterations
-runEM=makeEM(Y,init_guess,iter=20)
+runEM = EM(Y, init_guess, iter=1000)
 ```
 
 ### Results visualization
