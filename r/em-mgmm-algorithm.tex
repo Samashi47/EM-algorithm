@@ -1,0 +1,419 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\author{}
+\date{\vspace{-2.5em}}
+
+\begin{document}
+
+\section{EM algorithm for Multivariate Gaussian Mixture
+Model}\label{em-algorithm-for-multivariate-gaussian-mixture-model}
+
+\subsubsection{Data import}\label{data-import}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{iris }\OtherTok{=} \FunctionTok{read.csv}\NormalTok{(}\StringTok{"D:/Projects/EM{-}algorithm/data/Iris.csv"}\NormalTok{, }\AttributeTok{header =} \ConstantTok{TRUE}\NormalTok{, }\AttributeTok{sep =} \StringTok{","}\NormalTok{) }
+
+\NormalTok{iris2 }\OtherTok{=}\NormalTok{ iris[,}\DecValTok{1}\SpecialCharTok{:}\DecValTok{4}\NormalTok{]}
+
+\FunctionTok{print}\NormalTok{(iris2)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##     SepalLengthCm SepalWidthCm PetalLengthCm PetalWidthCm
+## 1             5.1          3.5           1.4          0.2
+## 2             4.9          3.0           1.4          0.2
+## 3             4.7          3.2           1.3          0.2
+## 4             4.6          3.1           1.5          0.2
+## 5             5.0          3.6           1.4          0.2
+## 6             5.4          3.9           1.7          0.4
+## 7             4.6          3.4           1.4          0.3
+## 8             5.0          3.4           1.5          0.2
+## 9             4.4          2.9           1.4          0.2
+## 10            4.9          3.1           1.5          0.1
+## 11            5.4          3.7           1.5          0.2
+## 12            4.8          3.4           1.6          0.2
+## 13            4.8          3.0           1.4          0.1
+## 14            4.3          3.0           1.1          0.1
+## 15            5.8          4.0           1.2          0.2
+## 16            5.7          4.4           1.5          0.4
+## 17            5.4          3.9           1.3          0.4
+## 18            5.1          3.5           1.4          0.3
+## 19            5.7          3.8           1.7          0.3
+## 20            5.1          3.8           1.5          0.3
+## 21            5.4          3.4           1.7          0.2
+## 22            5.1          3.7           1.5          0.4
+## 23            4.6          3.6           1.0          0.2
+## 24            5.1          3.3           1.7          0.5
+## 25            4.8          3.4           1.9          0.2
+## 26            5.0          3.0           1.6          0.2
+## 27            5.0          3.4           1.6          0.4
+## 28            5.2          3.5           1.5          0.2
+## 29            5.2          3.4           1.4          0.2
+## 30            4.7          3.2           1.6          0.2
+## 31            4.8          3.1           1.6          0.2
+## 32            5.4          3.4           1.5          0.4
+## 33            5.2          4.1           1.5          0.1
+## 34            5.5          4.2           1.4          0.2
+## 35            4.9          3.1           1.5          0.1
+## 36            5.0          3.2           1.2          0.2
+## 37            5.5          3.5           1.3          0.2
+## 38            4.9          3.1           1.5          0.1
+## 39            4.4          3.0           1.3          0.2
+## 40            5.1          3.4           1.5          0.2
+## 41            5.0          3.5           1.3          0.3
+## 42            4.5          2.3           1.3          0.3
+## 43            4.4          3.2           1.3          0.2
+## 44            5.0          3.5           1.6          0.6
+## 45            5.1          3.8           1.9          0.4
+## 46            4.8          3.0           1.4          0.3
+## 47            5.1          3.8           1.6          0.2
+## 48            4.6          3.2           1.4          0.2
+## 49            5.3          3.7           1.5          0.2
+## 50            5.0          3.3           1.4          0.2
+## 51            7.0          3.2           4.7          1.4
+## 52            6.4          3.2           4.5          1.5
+## 53            6.9          3.1           4.9          1.5
+## 54            5.5          2.3           4.0          1.3
+## 55            6.5          2.8           4.6          1.5
+## 56            5.7          2.8           4.5          1.3
+## 57            6.3          3.3           4.7          1.6
+## 58            4.9          2.4           3.3          1.0
+## 59            6.6          2.9           4.6          1.3
+## 60            5.2          2.7           3.9          1.4
+## 61            5.0          2.0           3.5          1.0
+## 62            5.9          3.0           4.2          1.5
+## 63            6.0          2.2           4.0          1.0
+## 64            6.1          2.9           4.7          1.4
+## 65            5.6          2.9           3.6          1.3
+## 66            6.7          3.1           4.4          1.4
+## 67            5.6          3.0           4.5          1.5
+## 68            5.8          2.7           4.1          1.0
+## 69            6.2          2.2           4.5          1.5
+## 70            5.6          2.5           3.9          1.1
+## 71            5.9          3.2           4.8          1.8
+## 72            6.1          2.8           4.0          1.3
+## 73            6.3          2.5           4.9          1.5
+## 74            6.1          2.8           4.7          1.2
+## 75            6.4          2.9           4.3          1.3
+## 76            6.6          3.0           4.4          1.4
+## 77            6.8          2.8           4.8          1.4
+## 78            6.7          3.0           5.0          1.7
+## 79            6.0          2.9           4.5          1.5
+## 80            5.7          2.6           3.5          1.0
+## 81            5.5          2.4           3.8          1.1
+## 82            5.5          2.4           3.7          1.0
+## 83            5.8          2.7           3.9          1.2
+## 84            6.0          2.7           5.1          1.6
+## 85            5.4          3.0           4.5          1.5
+## 86            6.0          3.4           4.5          1.6
+## 87            6.7          3.1           4.7          1.5
+## 88            6.3          2.3           4.4          1.3
+## 89            5.6          3.0           4.1          1.3
+## 90            5.5          2.5           4.0          1.3
+## 91            5.5          2.6           4.4          1.2
+## 92            6.1          3.0           4.6          1.4
+## 93            5.8          2.6           4.0          1.2
+## 94            5.0          2.3           3.3          1.0
+## 95            5.6          2.7           4.2          1.3
+## 96            5.7          3.0           4.2          1.2
+## 97            5.7          2.9           4.2          1.3
+## 98            6.2          2.9           4.3          1.3
+## 99            5.1          2.5           3.0          1.1
+## 100           5.7          2.8           4.1          1.3
+## 101           6.3          3.3           6.0          2.5
+## 102           5.8          2.7           5.1          1.9
+## 103           7.1          3.0           5.9          2.1
+## 104           6.3          2.9           5.6          1.8
+## 105           6.5          3.0           5.8          2.2
+## 106           7.6          3.0           6.6          2.1
+## 107           4.9          2.5           4.5          1.7
+## 108           7.3          2.9           6.3          1.8
+## 109           6.7          2.5           5.8          1.8
+## 110           7.2          3.6           6.1          2.5
+## 111           6.5          3.2           5.1          2.0
+## 112           6.4          2.7           5.3          1.9
+## 113           6.8          3.0           5.5          2.1
+## 114           5.7          2.5           5.0          2.0
+## 115           5.8          2.8           5.1          2.4
+## 116           6.4          3.2           5.3          2.3
+## 117           6.5          3.0           5.5          1.8
+## 118           7.7          3.8           6.7          2.2
+## 119           7.7          2.6           6.9          2.3
+## 120           6.0          2.2           5.0          1.5
+## 121           6.9          3.2           5.7          2.3
+## 122           5.6          2.8           4.9          2.0
+## 123           7.7          2.8           6.7          2.0
+## 124           6.3          2.7           4.9          1.8
+## 125           6.7          3.3           5.7          2.1
+## 126           7.2          3.2           6.0          1.8
+## 127           6.2          2.8           4.8          1.8
+## 128           6.1          3.0           4.9          1.8
+## 129           6.4          2.8           5.6          2.1
+## 130           7.2          3.0           5.8          1.6
+## 131           7.4          2.8           6.1          1.9
+## 132           7.9          3.8           6.4          2.0
+## 133           6.4          2.8           5.6          2.2
+## 134           6.3          2.8           5.1          1.5
+## 135           6.1          2.6           5.6          1.4
+## 136           7.7          3.0           6.1          2.3
+## 137           6.3          3.4           5.6          2.4
+## 138           6.4          3.1           5.5          1.8
+## 139           6.0          3.0           4.8          1.8
+## 140           6.9          3.1           5.4          2.1
+## 141           6.7          3.1           5.6          2.4
+## 142           6.9          3.1           5.1          2.3
+## 143           5.8          2.7           5.1          1.9
+## 144           6.8          3.2           5.9          2.3
+## 145           6.7          3.3           5.7          2.5
+## 146           6.7          3.0           5.2          2.3
+## 147           6.3          2.5           5.0          1.9
+## 148           6.5          3.0           5.2          2.0
+## 149           6.2          3.4           5.4          2.3
+## 150           5.9          3.0           5.1          1.8
+\end{verbatim}
+
+\subsubsection{Algorithm implementation}\label{algorithm-implementation}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\#{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-} Expectation{-}Maximization Algorithm {-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}}
+\NormalTok{gaussmixEM }\OtherTok{=} \ControlFlowTok{function}\NormalTok{(params, X, }\AttributeTok{clusters =} \DecValTok{2}\NormalTok{, }\AttributeTok{tol=}\NormalTok{.}\DecValTok{00001}\NormalTok{, }\AttributeTok{maxits=}\DecValTok{100}\NormalTok{, }\AttributeTok{showits=}\NormalTok{T)\{}
+  \CommentTok{\# Arguments: }
+  \CommentTok{\# params: list of values for mu, var, and probs}
+  \CommentTok{\# X: data matrix}
+  \CommentTok{\# clusters: number of clusters}
+  \CommentTok{\# tol: tolerance for convergence}
+  \CommentTok{\# maxits: maximum number of iterations}
+  \CommentTok{\# showits: print iterations or not}
+
+  \FunctionTok{require}\NormalTok{(mvtnorm)}
+  \CommentTok{\# Starting points}
+\NormalTok{  N }\OtherTok{=} \FunctionTok{nrow}\NormalTok{(X)}
+\NormalTok{  mu }\OtherTok{=}\NormalTok{ params}\SpecialCharTok{$}\NormalTok{mu}
+\NormalTok{  var }\OtherTok{=}\NormalTok{ params}\SpecialCharTok{$}\NormalTok{var}
+\NormalTok{  probs }\OtherTok{=}\NormalTok{ params}\SpecialCharTok{$}\NormalTok{probs}
+  
+  \CommentTok{\# initializations}
+\NormalTok{  responsibility }\OtherTok{=} \FunctionTok{matrix}\NormalTok{(}\DecValTok{0}\NormalTok{, }\AttributeTok{ncol=}\NormalTok{clusters, }\AttributeTok{nrow=}\NormalTok{N)}
+\NormalTok{  logLikelihood }\OtherTok{=} \DecValTok{0}
+\NormalTok{  iteration }\OtherTok{=} \DecValTok{0}
+\NormalTok{  converged }\OtherTok{=} \ConstantTok{FALSE}
+  
+  \ControlFlowTok{if}\NormalTok{ (showits)}
+    \FunctionTok{cat}\NormalTok{(}\FunctionTok{paste}\NormalTok{(}\StringTok{"Iterations of EM:"}\NormalTok{, }\StringTok{"}\SpecialCharTok{\textbackslash{}n}\StringTok{"}\NormalTok{))}
+  
+  \ControlFlowTok{while}\NormalTok{ (}\SpecialCharTok{!}\NormalTok{converged }\SpecialCharTok{\&}\NormalTok{ iteration }\SpecialCharTok{\textless{}}\NormalTok{ maxits) \{ }
+\NormalTok{    probsOld }\OtherTok{=}\NormalTok{ probs}
+\NormalTok{    logLikelihoodOld }\OtherTok{=}\NormalTok{ logLikelihood}
+\NormalTok{    responsibilityOld }\OtherTok{=}\NormalTok{ responsibility}
+    
+\CommentTok{\#{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-} Expectation{-}Step {-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}}
+    \CommentTok{\# Compute responsibilities}
+    \ControlFlowTok{for}\NormalTok{ (k }\ControlFlowTok{in} \DecValTok{1}\SpecialCharTok{:}\NormalTok{clusters)\{}
+\NormalTok{      responsibility[,k] }\OtherTok{=}\NormalTok{ probs[k] }\SpecialCharTok{*} \FunctionTok{dmvnorm}\NormalTok{(X, mu[k,], }\AttributeTok{sigma =}\NormalTok{ var[[k]], }\AttributeTok{log=}\NormalTok{F)}
+\NormalTok{    \}}
+\NormalTok{    responsibility }\OtherTok{=}\NormalTok{ responsibility}\SpecialCharTok{/}\FunctionTok{rowSums}\NormalTok{(responsibility)}
+    
+\CommentTok{\#{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-} Maximization{-}Step {-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}{-}}
+\NormalTok{    rk }\OtherTok{=} \FunctionTok{colSums}\NormalTok{(responsibility)}
+\NormalTok{    probs }\OtherTok{=}\NormalTok{ rk}\SpecialCharTok{/}\NormalTok{N}
+    \ControlFlowTok{for}\NormalTok{ (k }\ControlFlowTok{in} \DecValTok{1}\SpecialCharTok{:}\NormalTok{clusters)\{}
+\NormalTok{      varMatrix }\OtherTok{=} \FunctionTok{matrix}\NormalTok{(}\DecValTok{0}\NormalTok{, }\AttributeTok{ncol=}\FunctionTok{ncol}\NormalTok{(X), }\AttributeTok{nrow=}\FunctionTok{ncol}\NormalTok{(X))}
+      \ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\SpecialCharTok{:}\NormalTok{N)\{}
+\NormalTok{        varMatrix }\OtherTok{=}\NormalTok{ varMatrix }\SpecialCharTok{+}\NormalTok{ responsibility[i,k] }\SpecialCharTok{*}\NormalTok{ X[i,]}\SpecialCharTok{\%*\%}\FunctionTok{t}\NormalTok{(X[i,])}
+\NormalTok{      \}}
+\NormalTok{      mu[k,] }\OtherTok{=}\NormalTok{ (}\FunctionTok{t}\NormalTok{(X) }\SpecialCharTok{\%*\%}\NormalTok{ responsibility[,k]) }\SpecialCharTok{/}\NormalTok{ rk[k]}
+\NormalTok{      var[[k]] }\OtherTok{=}\NormalTok{  varMatrix}\SpecialCharTok{/}\NormalTok{rk[k] }\SpecialCharTok{{-}}\NormalTok{ mu[k,]}\SpecialCharTok{\%*\%}\FunctionTok{t}\NormalTok{(mu[k,])}
+\NormalTok{      logLikelihood[k] }\OtherTok{=} \SpecialCharTok{{-}}\NormalTok{.}\DecValTok{5} \SpecialCharTok{*} \FunctionTok{sum}\NormalTok{( responsibility[,k] }\SpecialCharTok{*} \FunctionTok{dmvnorm}\NormalTok{(X, mu[k,], }\AttributeTok{sigma =}\NormalTok{ var[[k]], }\AttributeTok{log=}\NormalTok{T) )}
+\NormalTok{    \}}
+\NormalTok{    logLikelihood }\OtherTok{=} \FunctionTok{sum}\NormalTok{(logLikelihood)}
+    
+    \DocumentationTok{\#\#\# compare old to current for convergence}
+\NormalTok{    paramsOld }\OtherTok{=}  \FunctionTok{c}\NormalTok{(logLikelihoodOld, probsOld)}
+\NormalTok{    paramsCurrent }\OtherTok{=} \FunctionTok{c}\NormalTok{(logLikelihood, probs)}
+\NormalTok{    iteration }\OtherTok{=}\NormalTok{ iteration }\SpecialCharTok{+} \DecValTok{1}
+    \ControlFlowTok{if}\NormalTok{ (showits }\SpecialCharTok{\&}\NormalTok{ iteration }\SpecialCharTok{==} \DecValTok{1} \SpecialCharTok{|}\NormalTok{ iteration}\SpecialCharTok{\%\%}\DecValTok{5} \SpecialCharTok{==} \DecValTok{0}\NormalTok{)}
+      \FunctionTok{cat}\NormalTok{(}\FunctionTok{paste}\NormalTok{(}\FunctionTok{format}\NormalTok{(iteration), }\StringTok{"..."}\NormalTok{, }\StringTok{"}\SpecialCharTok{\textbackslash{}n}\StringTok{"}\NormalTok{, }\AttributeTok{sep =} \StringTok{""}\NormalTok{))}
+\NormalTok{    converged }\OtherTok{=} \FunctionTok{min}\NormalTok{(}\FunctionTok{abs}\NormalTok{(paramsOld }\SpecialCharTok{{-}}\NormalTok{ paramsCurrent)) }\SpecialCharTok{\textless{}=}\NormalTok{ tol}
+\NormalTok{  \}}
+  
+\NormalTok{  cluster }\OtherTok{=} \FunctionTok{which}\NormalTok{(}\FunctionTok{round}\NormalTok{(responsibility)}\SpecialCharTok{==}\DecValTok{1}\NormalTok{, }\AttributeTok{arr.ind=}\NormalTok{T)}
+\NormalTok{  cluster }\OtherTok{=}\NormalTok{ cluster[}\FunctionTok{order}\NormalTok{(cluster[,}\DecValTok{1}\NormalTok{]), }\DecValTok{2}\NormalTok{]}
+\NormalTok{  out }\OtherTok{=} \FunctionTok{list}\NormalTok{(}\AttributeTok{probs=}\NormalTok{probs, }\AttributeTok{mu=}\NormalTok{mu, }\AttributeTok{var=}\NormalTok{var, }\AttributeTok{resp=}\NormalTok{responsibility, }\AttributeTok{cluster=}\NormalTok{cluster, }\AttributeTok{logLikelihood=}\NormalTok{logLikelihood)}
+\NormalTok{\} }
+\end{Highlighting}
+\end{Shaded}
+
+\subsubsection{Run EM algorithm}\label{run-em-algorithm}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{library}\NormalTok{(plyr)}
+
+\CommentTok{\# Create starting values}
+\NormalTok{initMu }\OtherTok{=} \FunctionTok{daply}\NormalTok{(iris, }\StringTok{\textquotesingle{}Species\textquotesingle{}}\NormalTok{, }\ControlFlowTok{function}\NormalTok{(x) }\FunctionTok{colMeans}\NormalTok{(x[,}\DecValTok{1}\SpecialCharTok{:}\DecValTok{4}\NormalTok{])) }\SpecialCharTok{+} \FunctionTok{runif}\NormalTok{(}\DecValTok{4}\NormalTok{, }\DecValTok{0}\NormalTok{, .}\DecValTok{5}\NormalTok{)}
+\NormalTok{initCov }\OtherTok{=} \FunctionTok{dlply}\NormalTok{(iris, }\StringTok{\textquotesingle{}Species\textquotesingle{}}\NormalTok{, }\ControlFlowTok{function}\NormalTok{(x) }\FunctionTok{var}\NormalTok{(x[,}\DecValTok{1}\SpecialCharTok{:}\DecValTok{4}\NormalTok{]) }\SpecialCharTok{+} \FunctionTok{diag}\NormalTok{(}\FunctionTok{runif}\NormalTok{(}\DecValTok{4}\NormalTok{, }\DecValTok{0}\NormalTok{, .}\DecValTok{5}\NormalTok{)))}
+\NormalTok{initProbs }\OtherTok{=} \FunctionTok{c}\NormalTok{(.}\DecValTok{1}\NormalTok{, .}\DecValTok{2}\NormalTok{, .}\DecValTok{7}\NormalTok{)}
+
+\NormalTok{initParams }\OtherTok{=} \FunctionTok{list}\NormalTok{(}\AttributeTok{mu=}\NormalTok{initMu, }\AttributeTok{var=}\NormalTok{initCov, }\AttributeTok{probs=}\NormalTok{initProbs)  }
+
+\CommentTok{\# Run and examine}
+\NormalTok{test }\OtherTok{=} \FunctionTok{gaussmixEM}\NormalTok{(}\AttributeTok{params=}\NormalTok{initParams, }\AttributeTok{X=}\FunctionTok{as.matrix}\NormalTok{(iris2), }\AttributeTok{clusters =} \DecValTok{3}\NormalTok{, }\AttributeTok{tol=}\FloatTok{1e{-}8}\NormalTok{, }\AttributeTok{maxits=}\DecValTok{1500}\NormalTok{, }\AttributeTok{showits=}\NormalTok{T)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Loading required package: mvtnorm
+\end{verbatim}
+
+\begin{verbatim}
+## Iterations of EM: 
+## 1...
+## 5...
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{table}\NormalTok{(test}\SpecialCharTok{$}\NormalTok{cluster, iris}\SpecialCharTok{$}\NormalTok{Species)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##    
+##     Iris-setosa Iris-versicolor Iris-virginica
+##   1          50               0              0
+##   2           0              49              4
+##   3           0               1             46
+\end{verbatim}
+
+\subsubsection{Results visualization}\label{results-visualization}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{library}\NormalTok{(ggplot2)}
+
+\FunctionTok{png}\NormalTok{(}\StringTok{\textquotesingle{}D:/Projects/EM{-}algorithm/plots/em{-}mgmm{-}plot{-}iris{-}example.png\textquotesingle{}}\NormalTok{, }\AttributeTok{width=}\DecValTok{1080}\NormalTok{, }\AttributeTok{height=}\DecValTok{2160}\NormalTok{)}
+
+\CommentTok{\# Scatter plot of clusters}
+\FunctionTok{ggplot}\NormalTok{(}\AttributeTok{data =}\NormalTok{ iris, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ iris2}\SpecialCharTok{$}\NormalTok{PetalLengthCm, }\AttributeTok{y =}\NormalTok{ iris2}\SpecialCharTok{$}\NormalTok{PetalWidthCm, }\AttributeTok{color =} \FunctionTok{as.factor}\NormalTok{(test}\SpecialCharTok{$}\NormalTok{cluster))) }\SpecialCharTok{+}
+  \FunctionTok{geom\_point}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{geom\_point}\NormalTok{(}\AttributeTok{data =} \FunctionTok{as.data.frame}\NormalTok{(test}\SpecialCharTok{$}\NormalTok{mu), }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ test}\SpecialCharTok{$}\NormalTok{mu[,}\DecValTok{3}\NormalTok{], }\AttributeTok{y =}\NormalTok{ test}\SpecialCharTok{$}\NormalTok{mu[,}\DecValTok{4}\NormalTok{]), }\AttributeTok{color =} \StringTok{"black"}\NormalTok{, }\AttributeTok{size =} \DecValTok{4}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title =} \StringTok{"Scatter Plot of Clusters and Centroids"}\NormalTok{, }\AttributeTok{x =} \StringTok{"Sepal Length"}\NormalTok{, }\AttributeTok{y =} \StringTok{"Sepal Width"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{theme\_minimal}\NormalTok{()}
+
+\FunctionTok{dev.off}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## pdf 
+##   2
+\end{verbatim}
+
+\end{document}
