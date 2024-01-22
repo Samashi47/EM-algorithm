@@ -1,6 +1,6 @@
-# EM algorithm for Gaussian Mixture Model
+# EM algorithm for Univariate Gaussian Mixture Model
 
-### Data import and visualization
+### Data import
 ```{R}
 myData = read.csv("D:/Projects/EM-algorithm/data/Iris.csv", header = TRUE, sep = ",") 
 ```
