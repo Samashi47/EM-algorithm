@@ -12,7 +12,7 @@ Then:
 cd EM-algorithm
 ```
 
-# R inplementation
+# R implementation
 
 > [!NOTE]
 >
