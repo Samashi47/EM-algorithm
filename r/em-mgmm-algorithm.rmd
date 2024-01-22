@@ -104,7 +104,7 @@ png('D:/Projects/EM-algorithm/plots/em-mgmm-plot-iris-example.png', width=1080, 
 ggplot(data = iris, aes(x = iris2$PetalLengthCm, y = iris2$PetalWidthCm, color = as.factor(test$cluster))) +
   geom_point() +
   geom_point(data = as.data.frame(test$mu), aes(x = test$mu[,3], y = test$mu[,4]), color = "black", size = 4) +
-  labs(title = "Scatter Plot of Clusters and Centroids", x = "Sepal Length", y = "Sepal Width") +
+  labs(title = "Scatter Plot of Clusters and Centroids", x = "Petal Length", y = "Petal Width") +
   theme_minimal()
 
 dev.off()
