@@ -98,7 +98,7 @@ table(test$cluster, iris$Species)
 ```{R}
 library(ggplot2)
 
-png('D:/Projects/EM-algorithm/plots/em-mgmm-plot-iris-example.png', width=1080, height=2160)
+png('D:/Projects/EM-algorithm/plots/em-mgmm-plot-iris-example.png', width=1080, height=1080)
 
 # Scatter plot of clusters
 ggplot(data = iris, aes(x = iris2$PetalLengthCm, y = iris2$PetalWidthCm, color = as.factor(test$cluster))) +
