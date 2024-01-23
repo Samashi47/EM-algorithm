@@ -49,10 +49,11 @@ gaussmixEM = function(params, X, clusters = 2, tol=.00001, maxits=100, showits=T
       responsibility[,k] = probs[k] * dmvnorm(X, mu[k,], sigma = var[[k]], log=F)
     }
     responsibility = responsibility/rowSums(responsibility)
-    
 #-------------------------------- Maximization-Step --------------------------------
     rk = colSums(responsibility)
+
     probs = rk/N
+
     for (k in 1:clusters){
       varMatrix = matrix(0, ncol=ncol(X), nrow=ncol(X))
       for (i in 1:N){
@@ -60,19 +61,30 @@ gaussmixEM = function(params, X, clusters = 2, tol=.00001, maxits=100, showits=T
       }
       mu[k,] = (t(X) %*% responsibility[,k]) / rk[k]
       var[[k]] =  varMatrix/rk[k] - mu[k,]%*%t(mu[k,])
-      logLikelihood[k] = -.5 * sum( responsibility[,k] * dmvnorm(X, mu[k,], sigma = var[[k]], log=T) )
+      logLikelihood[k] = -.5 * sum( responsibility[,k] * dmvnorm(X, mu[k,], sigma = var[[k]], log=T))
     }
     logLikelihood = sum(logLikelihood)
-    
+
+    cat(paste("logLikelihood at iteration - ", format(iteration), "...", "\n", sep = ""))
+    print(logLikelihood)
+
     ### compare old to current for convergence
     paramsOld =  c(logLikelihoodOld, probsOld)
     paramsCurrent = c(logLikelihood, probs)
+
+    cat(paste("params at iteration - ", format(iteration), "...", "\n", sep = ""))
+    print("paramsOld\n")
+    print(paramsOld)
+    print("paramsCurrent\n")
+    print(paramsCurrent)
+
     iteration = iteration + 1
-    if (showits & iteration == 1 | iteration%%5 == 0)
-      cat(paste(format(iteration), "...", "\n", sep = ""))
-    
-    if(min(abs(paramsOld - paramsCurrent)) < tol) {
-            converged = TRUE
+    #if (showits & iteration == 1 | iteration%%5 == 0)
+    #  cat(paste("Iteration - ", format(iteration), "...", "\n", sep = ""))
+    if(any(is.nan(paramsCurrent))) {
+      stop("NaN values found in paramsCurrent")
+    } else if(min(abs(paramsOld - paramsCurrent)) < tol) {
+      converged = TRUE
     }
   }
   
@@ -91,16 +103,16 @@ library(plyr)
 # Create starting values
 Mu = daply(iris2, NULL, function(x) colMeans(x)) + runif(4, 0, 0.5)
 Cov = dlply(iris2, NULL, function(x) var(x) + diag(runif(4, 0, 0.5)))
-initProbs = c(.1, .2, .7)
 
-column.names <- c("SepalLengthCm", "SepalWidthCm", "PetalLengthCm", "PetalWidthCm")
+column.names <- colnames(iris2)
 row.names <- c("Cluster 1", "Cluster 2", "Cluster 3")
 
 # Create list of starting values
 initMu = array(c(Mu[1] + 0.1, Mu[1] + 0.2, Mu[1] + 0.3, Mu[2] + 0.1, Mu[2] + 0.2, Mu[2] + 0.3, Mu[3] + 0.1, Mu[3] + 0.2, Mu[3] + 0.3, Mu[4] + 0.1, Mu[4] + 0.2, Mu[4] + 0.4) , dim = c(3, 4),dimnames = list(row.names,column.names))
-covInit <- list('Cluster 1' = Cov[[1]], 'Cluster 2' = Cov[[1]], 'Cluster 3' = Cov[[1]])
+initCov <- list('Cluster 1' = Cov[[1]], 'Cluster 2' = Cov[[1]], 'Cluster 3' = Cov[[1]])
+initProbs = c(.1, .2, .7)
 
-initParams = list(mu=initMu, var=covInit, probs=initProbs)  
+initParams = list(mu=initMu, var=initCov, probs=initProbs)  
 
 print(initParams)
 
@@ -110,8 +122,8 @@ table(test$cluster, iris$Species)
 
 #    Iris-setosa Iris-versicolor Iris-virginica
 #  1          50               0              0
-#  2           0              36             16
-#  3           0              14             34
+#  2           0              49             16
+#  3           0               1             34
 ```
 
 ##### Results visualization
@@ -124,7 +136,7 @@ options(repr.plot.width = 5, repr.plot.height =5)
 ggplot(data = iris, aes(x = iris2$SepalLengthCm, y = iris2$SepalWidthCm, color = as.factor(test$cluster))) +
   geom_point(size = 3) +
   geom_point(data = as.data.frame(test$mu), aes(x = test$mu[,1], y = test$mu[,2]), color = "black", size = 4) +
-  labs(title = "Scatter Plot of Clusters and Centroids", x = "Sepal Length", y = "Sepal Width") +
+  labs(title = "Scatter Plot of Clusters and Centroids", x = colnames(iris2)[1], y = colnames(iris2)[2]) +
   theme(text = element_text(size = 15), aspect.ratio = 1)
 
 dev.off()
@@ -161,7 +173,7 @@ options(repr.plot.width = 5, repr.plot.height =5)
 ggplot(data = iris, aes(x = iris2$SepalLengthCm, y = iris2$SepalWidthCm, color = as.factor(test$cluster))) +
   geom_point(size = 3) +
   geom_point(data = as.data.frame(test$mu), aes(x = test$mu[,1], y = test$mu[,2]), color = "black", size = 4) +
-  labs(title = "Scatter Plot of Clusters and Centroids", x = "Sepal Length", y = "Sepal Width") +
+  labs(title = "Scatter Plot of Clusters and Centroids", x = colnames(iris2)[1], y = colnames(iris2)[2]) +
   theme(text = element_text(size = 15), aspect.ratio = 1)
 dev.off()
 ```
@@ -187,13 +199,13 @@ library(plyr)
 # Create starting values
 Mu = daply(X, NULL, function(x) colMeans(x)) + runif(2, 0, .5)
 Cov = dlply(X, NULL, function(x) var(x) + diag(runif(2, 0, .5)))
-initProbs = c(.1, .3, .6, 0.9)
 
 column.names <- c("Age", "Spending Score (1-100)")
 row.names <- c("Cluster 1", "Cluster 2", "Cluster 3", "Cluster 4")
 
 initMu = array(c(Mu[1] + 0.1, Mu[1] + 0.2, Mu[1] + 0.3, Mu[1] + 0.4, Mu[2] + 0.1, Mu[2] + 0.2, Mu[2] + 0.3, Mu[2] + 0.4), dim = c(4,2),dimnames = list(row.names,column.names))
 initCov <- list('Cluster 1' = Cov[[1]], 'Cluster 2' = Cov[[1]], 'Cluster 3' = Cov[[1]], 'Cluster 4' = Cov[[1]])
+initProbs = c(.1, .3, .6, 0.9)
 
 initParams <- list(mu = initMu, var = initCov, probs = initProbs)
 
@@ -208,12 +220,13 @@ results = gaussmixEM(params=initParams, X=as.matrix(X), clusters = 4, tol=1e-8, 
 library(ggplot2)
 
 png('D:/Projects/EM-algorithm/plots/em-mgmm-plot-mall-customers-example-general-2cols.png', width=1080, height=1080)
+
 options(repr.plot.width = 5, repr.plot.height =5)
 # Scatter plot of clusters
 ggplot(data = X, aes(x = X[,1], y = X[,2], color = as.factor(c(results$cluster, 1)))) +
   geom_point(size = 3) +
   geom_point(data = as.data.frame(results$mu), aes(x = results$mu[,1], y = results$mu[,2]), color = "black", size = 4) +
-  labs(title = "Scatter Plot of Clusters and Centroids", x = "Age", y = "Spending Score (1-100)") +
+  labs(title = "Scatter Plot of Clusters and Centroids", x = colnames(X)[1], y = colnames(X)[2]) +
   theme(text = element_text(size = 15), aspect.ratio = 1)
 
 dev.off()
@@ -229,36 +242,30 @@ Cov = dlply(MallCustomers, NULL, function(x) var(x) + diag(runif(4, 0, 0.5)))
 column.names <- c("Gender", "Age", "Annual Income (k$)", "Spending Score (1-100)")
 row.names <- c("Cluster 1", "Cluster 2", "Cluster 3", "Cluster 4")
 
-initMu = array(c(Mu[1] + 0.1, Mu[1] + 0.2, Mu[1] + 0.3, Mu[1] + 0.4, Mu[2] + 0.1, Mu[2] + 0.2, Mu[2] + 0.3, Mu[2] + 0.4, Mu[3] + 0.1, Mu[3] + 0.2, Mu[3] + 0.3, Mu[3] + 0.4, Mu[4] + 0.1, Mu[4] + 0.2, Mu[4] + 0.3, Mu[4] + 0.4) , dim = c(4, 4),dimnames = list(row.names,column.names))
+initMu = array(c(Mu[1], Mu[1] + runif(1, min=-0.1, max=0.1), Mu[1] + runif(1, min=-0.1, max=0.1), Mu[1] + runif(1, min=-0.1, max=0.1), Mu[2], Mu[2] + runif(1, min=-0.1, max=0.1), Mu[2] + runif(1, min=-0.1, max=0.1), Mu[2] + runif(1, min=-0.1, max=0.1), Mu[3], Mu[3] + runif(1, min=-0.1, max=0.1), Mu[3] + runif(1, min=-0.1, max=0.1), Mu[3] + runif(1, min=-0.1, max=0.1), Mu[4], Mu[4] + runif(1, min=-0.1, max=0.1), Mu[4] + runif(1, min=-0.1, max=0.1), Mu[4] + runif(1, min=-0.1, max=0.1)) , dim = c(4, 4),dimnames = list(row.names,column.names))
 initCov <- list('Cluster 1' = Cov[[1]], 'Cluster 2' = Cov[[1]], 'Cluster 3' = Cov[[1]], 'Cluster 4' = Cov[[1]])
-initProbs = c(.1, .35, .65, .9)
+initProbs = sort(runif(5, min=0.1, max=0.9))
 
 initParams <- list(mu = initMu, var = initCov, probs = initProbs)
 
 print(initParams)
 # Run and examine
-
-# BUG
-# Error in if (min(abs(paramsOld - paramsCurrent)) < tol) { : 
-# missing value where TRUE/FALSE needed
-
-
-results = gaussmixEM(params=initParams, X=as.matrix(MallCustomers), clusters = 4, tol=1e-8, maxits=1500, showits=T)
+results = gaussmixEM(params=initParams, X=as.matrix(MallCustomers), clusters = 4, tol=1e-10, maxits=1500, showits=T)
 print(results)
 ```
 
 ```{R}
-print(results)
 library(ggplot2)
 
-#png('D:/Projects/EM-algorithm/plots/em-mgmm-plot-iris-example.png', width=1080, height=1080)
+png('D:/Projects/EM-algorithm/plots/em-mgmm-plot-mall-customers-example-general-4cols.png', width=1080, height=1080)
+
 options(repr.plot.width = 5, repr.plot.height =5)
 # Scatter plot of clusters
-ggplot(data = MallCustomers, aes(x = MallCustomers[,1], y = MallCustomers[,2], color = as.factor(c(results$cluster, 1)))) +
+ggplot(data = MallCustomers, aes(x = MallCustomers[,2], y = MallCustomers[,3], color = as.factor(c(results$cluster, 1)))) +
   geom_point(size = 3) +
-  geom_point(data = as.data.frame(results$mu), aes(x = results$mu[,1], y = results$mu[,2]), color = "black", size = 4) +
-  labs(title = "Scatter Plot of Clusters and Centroids", x = "Age", y = "Spending Score (1-100)") +
+  geom_point(data = as.data.frame(results$mu), aes(x = results$mu[,2], y = results$mu[,3]), color = "black", size = 4) +
+  labs(title = "Scatter Plot of Clusters and Centroids", x = colnames(MallCustomers)[2], y = colnames(MallCustomers)[3]) +
   theme(text = element_text(size = 15), aspect.ratio = 1)
 
-#dev.off()
+dev.off()
 ```
