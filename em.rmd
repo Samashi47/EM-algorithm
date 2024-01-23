@@ -1,0 +1,275 @@
+```{R}
+myData = read.csv("D:/Projects/EM-algorithm/Iris.csv", header = TRUE, sep = ",") 
+```
+
+```{R}
+plot(hist(myData$PetalLengthCm))
+```
+
+```{R}
+L <- function(x, mu, sigma, pi) {
+  N <- length(x)
+  K <- length(mu)
+  total <- 0
+  for (i in 1:N) {
+    parts <- sapply(1:K, function(k) pi[k] * dnorm(x[i], mu[k], sigma[k]))
+    total <- total + log(sum(parts))
+  }
+  return(total)
+}
+
+estimate_gmm <- function(x, K, tol=0.001, max_iter=100) {
+  N <- length(x)
+  mu <- rep(runif(1), K)
+  sigma <- rep(runif(1), K)
+  pi <- rep(runif(1), K)
+  curr_L <- Inf
+  for (j in 1:max_iter) {
+    prev_L <- curr_L
+    
+    r <- matrix(0, nrow = N, ncol = K)
+    for (i in 1:N) {
+      parts <- sapply(1:K, function(k) pi[k] * dnorm(x[i], mu[k], sigma[k]))
+      total <- sum(parts)
+      for (k in 1:K) {
+        r[i, k] <- parts[k] / total
+      }
+    }
+    
+    rk <- colSums(r)
+    for (k in 1:K) {
+      pi[k] <- rk[k] / N
+      mu[k] <- sum(r[, k] * x) / rk[k]
+      sigma[k] <- sum(r[, k] * (x - mu[k])^2) / rk[k]
+    }
+    
+    curr_L <- L(x, mu, sigma, pi)
+    if (abs(prev_L - curr_L) < tol) {
+      break
+    }
+  }
+  return(list(mu = mu, sigma = sigma, pi = pi))
+}
+
+estimate_gmm(myData$PetalLengthCm, 2)
+```
+
+```{R}
+#-------------------------------- Expectation  -----------------------------
+
+expectation <- function(sample,p,a,b) {
+  p_expectation <- (p*dbinom(sample,1,a)) / ( p*dbinom(sample,1,a) + (1-p)*dbinom(sample,1,b) )
+  return(p_expectation)
+}
+
+
+#-------------------------------- Maximization   --------------------------------
+
+maximization <- function(sample,epart) {
+  
+  # estimate p
+  
+  p_temp <- mean(epart)
+  
+  # estimate a and b
+  
+  a_temp <- sum(sample*epart) / sum(epart)
+  b_temp <- sum(sample*(1-epart)) / sum(1-epart)
+  
+  list(p_temp,a_temp,b_temp)   
+}
+
+
+
+#---------------------------- Expectation Maximization Algorithm  -------------------------
+
+EM <- function(sample,p_inits,a_inits,b_inits,maxit=1000,tol=1e-6)
+  {
+  # Estimation of parameter(Initial)
+  flag <- 0
+  p_cur <- p_inits; a_cur <- a_inits; b_cur <- b_inits
+  
+  # Iterate between expectation and maximization parts
+  
+  for(i in 1:maxit){
+    cur <- c(p_cur,a_cur,b_cur)
+    new <- maximization(sample,expectation(sample, p_cur, a_cur, b_cur))
+    p_new <- new[[1]]; a_new <- new[[2]]; b_new <- new[[3]]
+    new_step <- c(p_new,a_new,b_new)
+    
+    # Stop iteration if the difference between the current and new estimates is less than a tolerance level
+    if( all(abs(cur - new_step) < tol) ){ flag <- 1; break}
+    
+    
+    # Otherwise continue iteration
+    p_cur <- p_new; a_cur <- a_new; b_cur <- b_new
+  }
+  if(!flag) warning("Didn't converge\n")
+  
+  list(p_cur, a_cur, b_cur)
+}
+
+
+
+#------------------------------ Calculating Information matrix ----------------------------
+
+Info.Mat.function <- function(sample, p.est, a.est, b.est){
+  expectation.est <- expectation(sample,p.est, a.est, b.est)
+  info.mat <- matrix(rep(0,9),3,3)
+  info.mat[1,1] <- - sum(expectation.est)/(p.est^2)  - sum((1-expectation.est))/((1-p.est)^2) 
+  info.mat[2,2] <- - sum(expectation.est*sample)/(a.est^2) - sum(expectation.est*(1-sample))/((1-a.est)^2)
+  info.mat[3,3] <- - sum((1-expectation.est)*sample)/(b.est^2) - sum((1-expectation.est)*(1-sample))/((1-b.est)^2)
+  return(-info.mat)
+}
+
+
+n <- 10000
+
+em = estimate_gmm(myData$SepalWidthCm, 1)
+
+p_true = em$pi
+a_true = em$mu
+b_true = em$sigma
+
+true <- c(p_true,a_true,b_true)
+u <- ifelse(runif(n)<p_true, myData$SepalLengthCm, myData$SepalWidthCm)
+
+
+# Set parameter estimates
+p_init = 0.10; a_init = 0.4; b_init = 0.7
+
+
+#--------------------Return EM Algorithm function and calculate Confidence Interval-----------------------------
+
+output <- EM(u,p_init,a_init,b_init)
+
+print(output)
+```
+
+```{R}
+L <- function(x, mu, sigma, pi) {
+  N <- length(x)
+  K <- length(mu)
+  total <- 0
+  for (i in 1:N) {
+    parts <- sapply(1:K, function(k) pi[k] * dnorm(x[i], mu[k], sigma[k]))
+    total <- total + log(sum(parts))
+  }
+  return(total)
+}
+
+estimate_gmm <- function(x, K, tol=0.001, max_iter=100) {
+  N <- length(x)
+  mu <- rep(runif(1), K)
+  sigma <- rep(runif(1), K)
+  pi <- rep(runif(1), K)
+  curr_L <- Inf
+  for (j in 1:max_iter) {
+    prev_L <- curr_L
+    
+    r <- matrix(0, nrow = N, ncol = K)
+    for (i in 1:N) {
+      parts <- sapply(1:K, function(k) pi[k] * dnorm(x[i], mu[k], sigma[k]))
+      total <- sum(parts)
+      for (k in 1:K) {
+        r[i, k] <- parts[k] / total
+      }
+    }
+    
+    rk <- colSums(r)
+    for (k in 1:K) {
+      pi[k] <- rk[k] / N
+      mu[k] <- sum(r[, k] * x) / rk[k]
+      sigma[k] <- sum(r[, k] * (x - mu[k])^2) / rk[k]
+    }
+    
+    curr_L <- L(x, mu, sigma, pi)
+    if (abs(prev_L - curr_L) < tol) {
+      break
+    }
+  }
+  return(list(mu = mu, sigma = sigma, pi = pi))
+}
+
+
+#' Expectation Step of the EM Algorithm
+#'
+#' Calculate the posterior probabilities (soft labels) that each component
+#' has to each data point.
+#'
+#' @param sd.vector Vector containing the standard deviations of each component
+#' @param sd.vector Vector containing the mean of each component
+#' @param alpha.vector Vector containing the mixing weights  of each component
+#' @return Named list containing the loglik and posterior.df
+e_step <- function(x, mu.vector, sd.vector, alpha.vector) {
+  comp1.prod <- dnorm(x, mu.vector[1], sd.vector[1]) * alpha.vector[1]
+  comp2.prod <- dnorm(x, mu.vector[2], sd.vector[2]) * alpha.vector[2]
+  sum.of.comps <- comp1.prod + comp2.prod
+  comp1.post <- comp1.prod / sum.of.comps
+  comp2.post <- comp2.prod / sum.of.comps
+
+  sum.of.comps.ln <- log(sum.of.comps, base = exp(1))
+  sum.of.comps.ln.sum <- sum(sum.of.comps.ln)
+
+  list("loglik" = sum.of.comps.ln.sum,
+       "posterior.df" = cbind(comp1.post, comp2.post))
+}
+
+#' Maximization Step of the EM Algorithm
+#'
+#' Update the Component Parameters
+#'
+#' @param x Input data.
+#' @param posterior.df Posterior probability data.frame.
+#' @return Named list containing the mean (mu), variance (var), and mixing
+#'   weights (alpha) for each component.
+m_step <- function(x, posterior.df) {
+  comp1.n <- sum(posterior.df[, 1])
+  comp2.n <- sum(posterior.df[, 2])
+
+  comp1.mu <- 1/comp1.n * sum(posterior.df[, 1] * x)
+  comp2.mu <- 1/comp2.n * sum(posterior.df[, 2] * x)
+
+  comp1.var <- sum(posterior.df[, 1] * (x - comp1.mu)^2) * 1/comp1.n
+  comp2.var <- sum(posterior.df[, 2] * (x - comp2.mu)^2) * 1/comp2.n
+
+  comp1.alpha <- comp1.n / length(x)
+  comp2.alpha <- comp2.n / length(x)
+
+  list("mu" = c(comp1.mu, comp2.mu),
+       "var" = c(comp1.var, comp2.var),
+       "alpha" = c(comp1.alpha, comp2.alpha))
+}
+```
+
+```{R}
+
+wait <- estimate_gmm(myData$PetalLengthCm, 2)
+
+wait.summary.df <- data.frame(mu = wait$mu, std = sqrt(wait$sigma), alpha = wait$pi)
+
+for (i in 1:50) {
+  if (i == 1) {
+    # Initialization
+    e.step <- e_step(wait, wait.summary.df["mu"], wait.summary.df["std"],
+                     wait.summary.df["alpha"])
+    m.step <- m_step(wait, e.step["posterior.df"])
+    cur.loglik <- e.step["loglik"]
+    loglik.vector <- e.step["loglik"]
+  } else {
+    # Repeat E and M steps till convergence
+    e.step <- e_step(wait, m.step["mu"], sqrt(m.step["var"]), 
+                     m.step["alpha"])
+    m.step <- m_step(wait, e.step["posterior.df"])
+    loglik.vector <- c(loglik.vector, e.step["loglik"])
+
+    loglik.diff <- abs((cur.loglik - e.step["loglik"]))
+    if(loglik.diff < 1e-6) {
+      break
+    } else {
+      cur.loglik <- e.step["loglik"]
+    }
+  }
+}
+loglik.vector
+```

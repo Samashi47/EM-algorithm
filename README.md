@@ -71,7 +71,7 @@ initParams <- list(mu = initMu, var = initCov, probs = initProbs)
 
 And run the algorithm with:
 ```R
-results = gaussmixEM(params=initParams, X=as.matrix(MallCustomers), clusters = 4, tol=1e-10, maxits=1500, showits=T)
+results = gaussmixEM(params=initParams, X=as.matrix(iris2), clusters = 3, tol=1e-10, maxits=1500, showits=T)
 print(results)
 ```
 
