@@ -124,7 +124,7 @@ options(repr.plot.width = 5, repr.plot.height =5)
 ggplot(data = iris, aes(x = iris2$SepalLengthCm, y = iris2$SepalWidthCm, color = as.factor(test$cluster))) +
   geom_point(size = 3) +
   geom_point(data = as.data.frame(test$mu), aes(x = test$mu[,1], y = test$mu[,2]), color = "black", size = 4) +
-  labs(title = "Scatter Plot of Clusters and Centroids", x = "Petal Length", y = "Petal Width") +
+  labs(title = "Scatter Plot of Clusters and Centroids", x = "Sepal Length", y = "Sepal Width") +
   theme(text = element_text(size = 15), aspect.ratio = 1)
 
 dev.off()
@@ -161,7 +161,7 @@ options(repr.plot.width = 5, repr.plot.height =5)
 ggplot(data = iris, aes(x = iris2$SepalLengthCm, y = iris2$SepalWidthCm, color = as.factor(test$cluster))) +
   geom_point(size = 3) +
   geom_point(data = as.data.frame(test$mu), aes(x = test$mu[,1], y = test$mu[,2]), color = "black", size = 4) +
-  labs(title = "Scatter Plot of Clusters and Centroids", x = "Petal Length", y = "Petal Width") +
+  labs(title = "Scatter Plot of Clusters and Centroids", x = "Sepal Length", y = "Sepal Width") +
   theme(text = element_text(size = 15), aspect.ratio = 1)
 dev.off()
 ```
