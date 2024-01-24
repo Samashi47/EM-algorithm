@@ -1,0 +1,2946 @@
+R version 4.3.2 (2023-10-31 ucrt) -- "Eye Holes"
+Copyright (C) 2023 The R Foundation for Statistical Computing
+Platform: x86_64-w64-mingw32/x64 (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.    
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.   
+
+  Natural language support but running in an English locale 
+
+R is a collaborative project with many contributors.        
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> iris = read.csv("D:/Projects/EM-algorithm/data/Iris.csv", header = TRUE, sep$
+>
+> iris2 = iris[,1:4]
+> #------------------------ Expectation-Maximization Algorithm ---------------$
+> gaussmixEM = function(params, X, clusters = 2, tol=.00001, maxits=100, showi$
++   # Arguments:
++   # params: list of values for mu, var, and probs
++   # X: data matrix
++   # clusters: number of clusters
++   # tol: tolerance for convergence
++   # maxits: maximum number of iterations
++   # showits: print iterations or not
++
++   require(mvtnorm)
++   # Starting points
++   N = nrow(X)
++   mu = params$mu
++   var = params$var
++   probs = params$probs
++
++   # initializations
++   responsibility = matrix(0, ncol=clusters, nrow=N)
++   logLikelihood = 0
++   iteration = 0
++   converged = FALSE
++
++   if (showits)
++     cat(paste("Iterations of EM:", "\n"))
++
++   while (iteration < maxits) {
++     if(converged) break
++     probsOld = probs
++     logLikelihoodOld = logLikelihood
++     responsibilityOld = responsibility
++
++ #-------------------------------- Expectation-Step -------------------------$
++     # Compute responsibilities
++     for (k in 1:clusters){
++       responsibility[,k] = probs[k] * dmvnorm(X, mu[k,], sigma = var[[k]], l$
++     }
++     responsibility = responsibility/rowSums(responsibility)
++ #-------------------------------- Maximization-Step ------------------------$
++     rk = colSums(responsibility)
++
++     probs = rk/N
++
++     for (k in 1:clusters){
++       varMatrix = matrix(0, ncol=ncol(X), nrow=ncol(X))
++       for (i in 1:N){
++         varMatrix = varMatrix + responsibility[i,k] * X[i,]%*%t(X[i,])
++       }
++       mu[k,] = (t(X) %*% responsibility[,k]) / rk[k]
++       var[[k]] =  varMatrix/rk[k] - mu[k,]%*%t(mu[k,])
++       logLikelihood[k] = -.5 * sum( responsibility[,k] * dmvnorm(X, mu[k,], $
++     }
++     logLikelihood = sum(logLikelihood)
++
++     cat(paste("logLikelihood at iteration - ", format(iteration), "...", "\n$
++     print(logLikelihood)
++
++     ### compare old to current for convergence
++     paramsOld =  c(logLikelihoodOld, probsOld)
++     paramsCurrent = c(logLikelihood, probs)
++
++     cat(paste("params at iteration - ", format(iteration), "...", "\n", sep $
++     print("paramsOld\n")
++     print(paramsOld)
++     print("paramsCurrent\n")
++     print(paramsCurrent)
++
++     iteration = iteration + 1
++     #if (showits & iteration == 1 | iteration%%5 == 0)
++     #  cat(paste("Iteration - ", format(iteration), "...", "\n", sep = ""))
++     if(any(is.nan(paramsCurrent))) {
++       stop("NaN values found in paramsCurrent")
++     } else if(min(abs(paramsOld - paramsCurrent)) < tol) {
++       converged = TRUE
++     }
++   }
++
++   cluster = which(round(responsibility)==1, arr.ind=T)
++   cluster = cluster[order(cluster[,1]), 2]
++   out = list(probs=probs, mu=mu, var=var, resp=responsibility, cluster=clust$
++ }
+> library(plyr)
+> 
+> # Create starting values
+> Mu = daply(iris2, NULL, function(x) colMeans(x)) + runif(4, 0, 0.5)
+> Cov = dlply(iris2, NULL, function(x) var(x) + diag(runif(4, 0, 0.5)))
+>
+> column.names <- colnames(iris2)
+> row.names <- c("Cluster 1", "Cluster 2", "Cluster 3")
+> 
+> # Create list of starting values
+> initMu = array(c(Mu[1] + 0.1, Mu[1] + 0.2, Mu[1] + 0.3, Mu[2] + 0.1, Mu[2] +$
+> initCov <- list('Cluster 1' = Cov[[1]], 'Cluster 2' = Cov[[1]], 'Cluster 3' $
+> initProbs = c(.1, .2, .7)
+> 
+> initParams = list(mu=initMu, var=initCov, probs=initProbs)
+> 
+> print(initParams)
+$mu
+          SepalLengthCm SepalWidthCm PetalLengthCm PetalWidthCm
+Cluster 1      6.235359     3.327122      4.216764      1.40064
+Cluster 2      6.335359     3.427122      4.316764      1.50064
+Cluster 3      6.435359     3.527122      4.416764      1.70064
+
+$var
+$var$`Cluster 1`
+              SepalLengthCm SepalWidthCm PetalLengthCm PetalWidthCm
+SepalLengthCm    1.15579370  -0.03926846     1.2736823    0.5169038
+SepalWidthCm    -0.03926846   0.23647836    -0.3217128   -0.1179812
+PetalLengthCm    1.27368233  -0.32171275     3.3790675    1.2963875
+PetalWidthCm     0.51690380  -0.11798121     1.2963875    0.6267545
+
+$var$`Cluster 2`
+              SepalLengthCm SepalWidthCm PetalLengthCm PetalWidthCm
+SepalLengthCm    1.15579370  -0.03926846     1.2736823    0.5169038
+SepalWidthCm    -0.03926846   0.23647836    -0.3217128   -0.1179812
+PetalLengthCm    1.27368233  -0.32171275     3.3790675    1.2963875
+PetalWidthCm     0.51690380  -0.11798121     1.2963875    0.6267545
+
+$var$`Cluster 3`
+              SepalLengthCm SepalWidthCm PetalLengthCm PetalWidthCm
+SepalLengthCm    1.15579370  -0.03926846     1.2736823    0.5169038
+SepalWidthCm    -0.03926846   0.23647836    -0.3217128   -0.1179812
+PetalLengthCm    1.27368233  -0.32171275     3.3790675    1.2963875
+PetalWidthCm     0.51690380  -0.11798121     1.2963875    0.6267545
+
+
+$probs
+[1] 0.1 0.2 0.7
+
+> 
+> # Run and examine
+> test = gaussmixEM(params=initParams, X=as.matrix(iris2), clusters = 3, tol=1$
+Loading required package: mvtnorm
+Iterations of EM:
+logLikelihood at iteration - 0...
+[1] 187.0342
+params at iteration - 0...
+[1] "paramsOld\n"
+[1] 0.0 0.1 0.2 0.7
+[1] "paramsCurrent\n"
+[1] 187.0342025   0.1739225   0.2578224   0.5682550
+logLikelihood at iteration - 1...
+[1] 183.5148
+params at iteration - 1...
+[1] "paramsOld\n"
+[1] 187.0342025   0.1739225   0.2578224   0.5682550
+[1] "paramsCurrent\n"
+[1] 183.5147729   0.1803917   0.2584515   0.5611568
+logLikelihood at iteration - 2...
+[1] 176.473
+params at iteration - 2...
+[1] "paramsOld\n"
+[1] 183.5147729   0.1803917   0.2584515   0.5611568
+[1] "paramsCurrent\n"
+[1] 176.4729962   0.1954783   0.2627656   0.5417561
+logLikelihood at iteration - 3...
+[1] 165.4341
+params at iteration - 3...
+[1] "paramsOld\n"
+[1] 176.4729962   0.1954783   0.2627656   0.5417561
+[1] "paramsCurrent\n"
+[1] 165.4340667   0.2166203   0.2698558   0.5135239
+logLikelihood at iteration - 4...
+[1] 153.8059
+params at iteration - 4...
+[1] "paramsOld\n"
+[1] 165.4340667   0.2166203   0.2698558   0.5135239
+[1] "paramsCurrent\n"
+[1] 153.8059041   0.2367795   0.2753684   0.4878521
+logLikelihood at iteration - 5...
+[1] 144.6829
+params at iteration - 5...
+[1] "paramsOld\n"
+[1] 153.8059041   0.2367795   0.2753684   0.4878521
+[1] "paramsCurrent\n"
+[1] 144.6828531   0.2520560   0.2814645   0.4664795
+logLikelihood at iteration - 6...
+[1] 136.0839
+params at iteration - 6...
+[1] "paramsOld\n"
+[1] 144.6828531   0.2520560   0.2814645   0.4664795
+[1] "paramsCurrent\n"
+[1] 136.0838886   0.2649562   0.2874228   0.4476211
+logLikelihood at iteration - 7...
+[1] 124.0343
+params at iteration - 7...
+[1] "paramsOld\n"
+[1] 136.0838886   0.2649562   0.2874228   0.4476211
+[1] "paramsCurrent\n"
+[1] 124.0342720   0.2790844   0.2902994   0.4306162
+logLikelihood at iteration - 8...
+[1] 105.3842
+params at iteration - 8...
+[1] "paramsOld\n"
+[1] 124.0342720   0.2790844   0.2902994   0.4306162
+[1] "paramsCurrent\n"
+[1] 105.3841535   0.2893623   0.2833628   0.4272748
+logLikelihood at iteration - 9...
+[1] 99.26604
+params at iteration - 9...
+[1] "paramsOld\n"
+[1] 105.3841535   0.2893623   0.2833628   0.4272748
+[1] "paramsCurrent\n"
+[1] 99.2660391  0.2924683  0.2661718  0.4413599
+logLikelihood at iteration - 10...
+[1] 95.04246
+params at iteration - 10...
+[1] "paramsOld\n"
+[1] 99.2660391  0.2924683  0.2661718  0.4413599
+[1] "paramsCurrent\n"
+[1] 95.0424596  0.2985359  0.2509741  0.4504899
+logLikelihood at iteration - 11...
+[1] 90.52754
+params at iteration - 11...
+[1] "paramsOld\n"
+[1] 95.0424596  0.2985359  0.2509741  0.4504899
+[1] "paramsCurrent\n"
+[1] 90.5275381  0.3049881  0.2372950  0.4577169
+logLikelihood at iteration - 12...
+[1] 85.77044
+params at iteration - 12...
+[1] "paramsOld\n"
+[1] 90.5275381  0.3049881  0.2372950  0.4577169
+[1] "paramsCurrent\n"
+[1] 85.7704396  0.3106743  0.2243746  0.4649510
+logLikelihood at iteration - 13...
+[1] 81.06649
+params at iteration - 13...
+[1] "paramsOld\n"
+[1] 85.7704396  0.3106743  0.2243746  0.4649510
+[1] "paramsCurrent\n"
+[1] 81.0664874  0.3160136  0.2109615  0.4730249
+logLikelihood at iteration - 14...
+[1] 76.10107
+params at iteration - 14...
+[1] "paramsOld\n"
+[1] 81.0664874  0.3160136  0.2109615  0.4730249
+[1] "paramsCurrent\n"
+[1] 76.1010678  0.3205573  0.1963560  0.4830867
+logLikelihood at iteration - 15...
+[1] 69.4592
+params at iteration - 15...
+[1] "paramsOld\n"
+[1] 76.1010678  0.3205573  0.1963560  0.4830867
+[1] "paramsCurrent\n"
+[1] 69.4592022  0.3225657  0.1806711  0.4967632
+logLikelihood at iteration - 16...
+[1] 59.94169
+params at iteration - 16...
+[1] "paramsOld\n"
+[1] 69.4592022  0.3225657  0.1806711  0.4967632
+[1] "paramsCurrent\n"
+[1] 59.9416923  0.3234470  0.1640645  0.5124885
+logLikelihood at iteration - 17...
+[1] 34.60554
+params at iteration - 17...
+[1] "paramsOld\n"
+[1] 59.9416923  0.3234470  0.1640645  0.5124885
+[1] "paramsCurrent\n"
+[1] 34.6055364  0.3226514  0.1524762  0.5248724
+logLikelihood at iteration - 18...
+[1] 31.67267
+params at iteration - 18...
+[1] "paramsOld\n"
+[1] 34.6055364  0.3226514  0.1524762  0.5248724
+[1] "paramsCurrent\n"
+[1] 31.6726684  0.3264492  0.1529572  0.5205936
+logLikelihood at iteration - 19...
+[1] 30.66841
+params at iteration - 19...
+[1] "paramsOld\n"
+[1] 31.6726684  0.3264492  0.1529572  0.5205936
+[1] "paramsCurrent\n"
+[1] 30.6684123  0.3276017  0.1552765  0.5171218
+logLikelihood at iteration - 20...
+[1] 30.16052
+params at iteration - 20...
+[1] "paramsOld\n"
+[1] 30.6684123  0.3276017  0.1552765  0.5171218
+[1] "paramsCurrent\n"
+[1] 30.1605202  0.3281984  0.1564494  0.5153522
+logLikelihood at iteration - 21...
+[1] 29.87997
+params at iteration - 21...
+[1] "paramsOld\n"
+[1] 30.1605202  0.3281984  0.1564494  0.5153522
+[1] "paramsCurrent\n"
+[1] 29.8799672  0.3288445  0.1564945  0.5146610
+logLikelihood at iteration - 22...
+[1] 29.71519
+params at iteration - 22...
+[1] "paramsOld\n"
+[1] 29.8799672  0.3288445  0.1564945  0.5146610
+[1] "paramsCurrent\n"
+[1] 29.7151937  0.3296999  0.1556744  0.5146257
+logLikelihood at iteration - 23...
+[1] 29.55352
+params at iteration - 23...
+[1] "paramsOld\n"
+[1] 29.7151937  0.3296999  0.1556744  0.5146257
+[1] "paramsCurrent\n"
+[1] 29.5535222  0.3308967  0.1540235  0.5150798
+logLikelihood at iteration - 24...
+[1] 29.28363
+params at iteration - 24...
+[1] "paramsOld\n"
+[1] 29.5535222  0.3308967  0.1540235  0.5150798
+[1] "paramsCurrent\n"
+[1] 29.2836317  0.3322601  0.1516421  0.5160978
+logLikelihood at iteration - 25...
+[1] 29.00542
+params at iteration - 25...
+[1] "paramsOld\n"
+[1] 29.2836317  0.3322601  0.1516421  0.5160978
+[1] "paramsCurrent\n"
+[1] 29.0054195  0.3330581  0.1490052  0.5179367
+logLikelihood at iteration - 26...
+[1] 28.87955
+params at iteration - 26...
+[1] "paramsOld\n"
+[1] 29.0054195  0.3330581  0.1490052  0.5179367
+[1] "paramsCurrent\n"
+[1] 28.8795462  0.3332537  0.1463273  0.5204190
+logLikelihood at iteration - 27...
+[1] 28.85521
+params at iteration - 27...
+[1] "paramsOld\n"
+[1] 28.8795462  0.3332537  0.1463273  0.5204190
+[1] "paramsCurrent\n"
+[1] 28.8552138  0.3332943  0.1437676  0.5229381
+logLikelihood at iteration - 28...
+[1] 28.88117
+params at iteration - 28...
+[1] "paramsOld\n"
+[1] 28.8552138  0.3332943  0.1437676  0.5229381
+[1] "paramsCurrent\n"
+[1] 28.8811699  0.3333093  0.1414853  0.5252054
+logLikelihood at iteration - 29...
+[1] 28.93176
+params at iteration - 29...
+[1] "paramsOld\n"
+[1] 28.8811699  0.3333093  0.1414853  0.5252054
+[1] "paramsCurrent\n"
+[1] 28.9317610  0.3333171  0.1395326  0.5271503
+logLikelihood at iteration - 30...
+[1] 28.99171
+params at iteration - 30...
+[1] "paramsOld\n"
+[1] 28.9317610  0.3333171  0.1395326  0.5271503
+[1] "paramsCurrent\n"
+[1] 28.9917136  0.3333217  0.1379020  0.5287763
+logLikelihood at iteration - 31...
+[1] 29.05188
+params at iteration - 31...
+[1] "paramsOld\n"
+[1] 28.9917136  0.3333217  0.1379020  0.5287763
+[1] "paramsCurrent\n"
+[1] 29.0518784  0.3333245  0.1365622  0.5301133
+logLikelihood at iteration - 32...
+[1] 29.10739
+params at iteration - 32...
+[1] "paramsOld\n"
+[1] 29.0518784  0.3333245  0.1365622  0.5301133
+[1] "paramsCurrent\n"
+[1] 29.1073871  0.3333262  0.1354733  0.5312005
+logLikelihood at iteration - 33...
+[1] 29.15615
+params at iteration - 33...
+[1] "paramsOld\n"
+[1] 29.1073871  0.3333262  0.1354733  0.5312005
+[1] "paramsCurrent\n"
+[1] 29.1561493  0.3333274  0.1345946  0.5320780
+logLikelihood at iteration - 34...
+[1] 29.1977
+params at iteration - 34...
+[1] "paramsOld\n"
+[1] 29.1561493  0.3333274  0.1345946  0.5320780
+[1] "paramsCurrent\n"
+[1] 29.1976990  0.3333281  0.1338885  0.5327834
+logLikelihood at iteration - 35...
+[1] 29.23242
+params at iteration - 35...
+[1] "paramsOld\n"
+[1] 29.1976990  0.3333281  0.1338885  0.5327834
+[1] "paramsCurrent\n"
+[1] 29.2324220  0.3333287  0.1333222  0.5333491
+logLikelihood at iteration - 36...
+[1] 29.26108
+params at iteration - 36...
+[1] "paramsOld\n"
+[1] 29.2324220  0.3333287  0.1333222  0.5333491
+[1] "paramsCurrent\n"
+[1] 29.2610824  0.3333291  0.1328683  0.5338026
+logLikelihood at iteration - 37...
+[1] 29.28456
+params at iteration - 37...
+[1] "paramsOld\n"
+[1] 29.2610824  0.3333291  0.1328683  0.5338026
+[1] "paramsCurrent\n"
+[1] 29.2845563  0.3333293  0.1325042  0.5341664
+logLikelihood at iteration - 38...
+[1] 29.30369
+params at iteration - 38...
+[1] "paramsOld\n"
+[1] 29.2845563  0.3333293  0.1325042  0.5341664
+[1] "paramsCurrent\n"
+[1] 29.3036929  0.3333296  0.1322118  0.5344587
+logLikelihood at iteration - 39...
+[1] 29.31925
+params at iteration - 39...
+[1] "paramsOld\n"
+[1] 29.3036929  0.3333296  0.1322118  0.5344587
+[1] "paramsCurrent\n"
+[1] 29.3192532  0.3333297  0.1319765  0.5346937
+logLikelihood at iteration - 40...
+[1] 29.33189
+params at iteration - 40...
+[1] "paramsOld\n"
+[1] 29.3192532  0.3333297  0.1319765  0.5346937
+[1] "paramsCurrent\n"
+[1] 29.3318898  0.3333298  0.1317870  0.5348832
+logLikelihood at iteration - 41...
+[1] 29.34215
+params at iteration - 41...
+[1] "paramsOld\n"
+[1] 29.3318898  0.3333298  0.1317870  0.5348832
+[1] "paramsCurrent\n"
+[1] 29.3421480  0.3333299  0.1316339  0.5350361
+logLikelihood at iteration - 42...
+[1] 29.35048
+params at iteration - 42...
+[1] "paramsOld\n"
+[1] 29.3421480  0.3333299  0.1316339  0.5350361
+[1] "paramsCurrent\n"
+[1] 29.3504765  0.3333300  0.1315102  0.5351598
+logLikelihood at iteration - 43...
+[1] 29.35724
+params at iteration - 43...
+[1] "paramsOld\n"
+[1] 29.3504765  0.3333300  0.1315102  0.5351598
+[1] "paramsCurrent\n"
+[1] 29.3572412  0.3333301  0.1314099  0.5352600
+logLikelihood at iteration - 44...
+[1] 29.36274
+params at iteration - 44...
+[1] "paramsOld\n"
+[1] 29.3572412  0.3333301  0.1314099  0.5352600
+[1] "paramsCurrent\n"
+[1] 29.3627390  0.3333301  0.1313286  0.5353412
+logLikelihood at iteration - 45...
+[1] 29.36721
+params at iteration - 45...
+[1] "paramsOld\n"
+[1] 29.3627390  0.3333301  0.1313286  0.5353412
+[1] "paramsCurrent\n"
+[1] 29.3672100  0.3333302  0.1312626  0.5354072
+logLikelihood at iteration - 46...
+[1] 29.37085
+params at iteration - 46...
+[1] "paramsOld\n"
+[1] 29.3672100  0.3333302  0.1312626  0.5354072
+[1] "paramsCurrent\n"
+[1] 29.3708484  0.3333302  0.1312090  0.5354608
+logLikelihood at iteration - 47...
+[1] 29.37381
+params at iteration - 47...
+[1] "paramsOld\n"
+[1] 29.3708484  0.3333302  0.1312090  0.5354608
+[1] "paramsCurrent\n"
+[1] 29.3738109  0.3333302  0.1311653  0.5355045
+logLikelihood at iteration - 48...
+[1] 29.37622
+params at iteration - 48...
+[1] "paramsOld\n"
+[1] 29.3738109  0.3333302  0.1311653  0.5355045
+[1] "paramsCurrent\n"
+[1] 29.3762244  0.3333302  0.1311298  0.5355400
+logLikelihood at iteration - 49...
+[1] 29.37819
+params at iteration - 49...
+[1] "paramsOld\n"
+[1] 29.3762244  0.3333302  0.1311298  0.5355400
+[1] "paramsCurrent\n"
+[1] 29.3781917  0.3333303  0.1311008  0.5355689
+logLikelihood at iteration - 50...
+[1] 29.3798
+params at iteration - 50...
+[1] "paramsOld\n"
+[1] 29.3781917  0.3333303  0.1311008  0.5355689
+[1] "paramsCurrent\n"
+[1] 29.3797959  0.3333303  0.1310772  0.5355925
+logLikelihood at iteration - 51...
+[1] 29.3811
+params at iteration - 51...
+[1] "paramsOld\n"
+[1] 29.3797959  0.3333303  0.1310772  0.5355925
+[1] "paramsCurrent\n"
+[1] 29.3811046  0.3333303  0.1310580  0.5356118
+logLikelihood at iteration - 52...
+[1] 29.38217
+params at iteration - 52...
+[1] "paramsOld\n"
+[1] 29.3811046  0.3333303  0.1310580  0.5356118
+[1] "paramsCurrent\n"
+[1] 29.3821725  0.3333303  0.1310423  0.5356275
+> 
+> print(test)
+$probs
+[1] 0.3333303 0.1310423 0.5356275
+
+$mu
+          SepalLengthCm SepalWidthCm PetalLengthCm PetalWidthCm
+Cluster 1      5.006004     3.418009      1.464001    0.2439994
+Cluster 2      7.015575     2.955966      5.437803    1.6736486
+Cluster 3      6.077627     2.851455      4.775873    1.6765675
+
+$var
+$var$`Cluster 1`
+     SepalLengthCm SepalWidthCm PetalLengthCm PetalWidthCm
+[1,]    0.12176292   0.09828815   0.015815434  0.010336309
+[2,]    0.09828815   0.14226679   0.011446576  0.011208641
+[3,]    0.01581543   0.01144658   0.029504016  0.005584098
+[4,]    0.01033631   0.01120864   0.005584098  0.011264039
+
+$var$`Cluster 2`
+     SepalLengthCm SepalWidthCm PetalLengthCm PetalWidthCm
+[1,]     0.2814802   0.10913085     0.4665045   0.15212748
+[2,]     0.1091309   0.14563584     0.1119918   0.03984931
+[3,]     0.4665045   0.11199178     0.9022072   0.29396777
+[4,]     0.1521275   0.03984931     0.2939678   0.10455769
+
+$var$`Cluster 3`
+     SepalLengthCm SepalWidthCm PetalLengthCm PetalWidthCm
+[1,]     0.2995934   0.10456015     0.3224988   0.16930716
+[2,]     0.1045602   0.09865787     0.1349661   0.08892543
+[3,]     0.3224988   0.13496613     0.5330647   0.28426248
+[4,]     0.1693072   0.08892543     0.2842625   0.19675237
+
+
+$resp
+                [,1]         [,2]         [,3]
+  [1,]  1.000000e+00 7.681118e-09 3.202111e-14
+  [2,]  9.999996e-01 4.168451e-07 1.126987e-09
+  [3,]  1.000000e+00 1.592275e-09 2.294738e-11
+  [4,]  1.000000e+00 2.525156e-11 2.235888e-09
+  [5,]  1.000000e+00 4.043866e-10 6.535186e-15
+  [6,]  1.000000e+00 2.682279e-08 2.220485e-16
+  [7,]  1.000000e+00 8.210198e-12 5.669460e-12
+  [8,]  1.000000e+00 2.259574e-09 1.557970e-12
+  [9,]  1.000000e+00 1.394665e-11 3.303915e-08
+ [10,]  1.000000e+00 3.217296e-09 1.570765e-09
+ [11,]  1.000000e+00 8.655961e-09 4.539510e-16
+ [12,]  1.000000e+00 8.049655e-12 2.151864e-11
+ [13,]  1.000000e+00 7.480776e-09 2.911751e-09
+ [14,]  1.000000e+00 1.615932e-11 2.495212e-09
+ [15,]  1.000000e+00 1.710448e-09 1.378193e-21
+ [16,]  1.000000e+00 6.241534e-10 1.569460e-24
+ [17,]  1.000000e+00 4.328847e-08 5.458426e-19
+ [18,]  1.000000e+00 4.745180e-08 3.316431e-14
+ [19,]  9.999999e-01 1.178791e-07 5.730362e-16
+ [20,]  1.000000e+00 3.593873e-10 2.049194e-16
+ [21,]  9.999997e-01 2.903275e-07 2.451705e-11
+ [22,]  1.000000e+00 1.015092e-08 4.189242e-15
+ [23,]  1.000000e+00 4.011213e-10 1.079830e-14
+ [24,]  9.999774e-01 2.261780e-05 2.451946e-09
+ [25,]  1.000000e+00 3.052837e-13 1.399184e-08
+ [26,]  9.999995e-01 5.059800e-07 2.092386e-08
+ [27,]  9.999999e-01 9.453443e-08 1.766828e-11
+ [28,]  1.000000e+00 1.283185e-08 9.009122e-14
+ [29,]  9.999999e-01 9.539562e-08 1.972968e-13
+ [30,]  1.000000e+00 1.709431e-11 1.289674e-09
+ [31,]  1.000000e+00 1.382679e-09 4.877841e-09
+ [32,]  9.999899e-01 1.011244e-05 9.536682e-13
+ [33,]  1.000000e+00 5.663959e-13 1.846549e-19
+ [34,]  1.000000e+00 1.388031e-10 1.872552e-22
+ [35,]  1.000000e+00 3.217296e-09 1.570765e-09
+ [36,]  9.999990e-01 9.747746e-07 2.877050e-12
+ [37,]  9.999998e-01 2.456663e-07 3.596555e-15
+ [38,]  1.000000e+00 3.217296e-09 1.570765e-09
+ [39,]  1.000000e+00 1.785043e-11 2.960756e-09
+ [40,]  1.000000e+00 1.228905e-08 1.077392e-12
+ [41,]  1.000000e+00 3.099668e-08 1.889320e-14
+ [42,]  9.995801e-01 3.922697e-04 2.758288e-05
+ [43,]  1.000000e+00 5.486982e-13 1.726636e-10
+ [44,]  9.999986e-01 1.350805e-06 1.312228e-10
+ [45,]  1.000000e+00 5.303532e-10 1.409298e-12
+ [46,]  9.999995e-01 5.358191e-07 1.505715e-09
+ [47,]  1.000000e+00 1.544618e-11 1.007927e-15
+ [48,]  1.000000e+00 2.386363e-11 1.187184e-10
+ [49,]  1.000000e+00 3.220232e-09 6.490450e-16
+ [50,]  1.000000e+00 2.677167e-08 2.883348e-12
+ [51,]  2.588145e-94 9.479810e-01 5.201896e-02
+ [52,]  4.790716e-85 1.478430e-01 8.521570e-01
+ [53,] 4.490943e-107 9.209835e-01 7.901646e-02
+ [54,]  6.788978e-66 7.556640e-05 9.999244e-01
+ [55,]  7.169778e-95 4.958189e-01 5.041811e-01
+ [56,]  1.036489e-80 4.394059e-08 1.000000e+00
+ [57,]  1.926376e-95 1.327141e-03 9.986729e-01
+ [58,]  1.382483e-34 1.176253e-09 1.000000e+00
+ [59,]  2.762501e-88 7.786829e-01 2.213171e-01
+ [60,]  5.820440e-62 4.517751e-12 1.000000e+00
+ [61,]  6.873725e-43 7.767440e-07 9.999992e-01
+ [62,]  2.948128e-74 4.191333e-05 9.999581e-01
+ [63,]  4.546812e-62 2.231463e-01 7.768537e-01
+ [64,]  2.117425e-92 5.075801e-04 9.994924e-01
+ [65,]  6.062762e-48 1.406508e-04 9.998593e-01
+ [66,]  3.443008e-81 8.804219e-01 1.195781e-01
+ [67,]  3.052210e-85 3.173136e-11 1.000000e+00
+ [68,]  2.442755e-59 6.130439e-05 9.999387e-01
+ [69,]  5.146919e-96 6.088130e-01 3.911870e-01
+ [70,]  1.058679e-55 2.709310e-04 9.997291e-01
+ [71,] 1.354195e-108 2.482317e-11 1.000000e+00
+ [72,]  2.161344e-63 2.516991e-01 7.483009e-01
+ [73,] 3.871763e-110 1.832921e-01 8.167079e-01
+ [74,]  7.909370e-88 1.414470e-04 9.998586e-01
+ [75,]  5.832953e-75 7.017135e-01 2.982865e-01
+ [76,]  8.218690e-82 8.114068e-01 1.885932e-01
+ [77,] 1.017861e-102 8.701887e-01 1.298113e-01
+ [78,] 2.441387e-118 2.257248e-01 7.742752e-01
+ [79,]  3.885437e-87 1.422049e-04 9.998578e-01
+ [80,]  2.289507e-40 9.221526e-02 9.077847e-01
+ [81,]  6.126810e-53 2.361643e-04 9.997638e-01
+ [82,]  1.577855e-47 3.909414e-04 9.996091e-01
+ [83,]  5.449189e-57 9.747167e-03 9.902528e-01
+ [84,] 3.374421e-119 1.255597e-06 9.999987e-01
+ [85,]  4.566723e-85 2.186359e-15 1.000000e+00
+ [86,]  2.074593e-85 5.398733e-07 9.999995e-01
+ [87,]  1.166500e-96 7.941230e-01 2.058770e-01
+ [88,]  1.255641e-85 8.195616e-01 1.804384e-01
+ [89,]  2.331442e-63 1.094751e-07 9.999999e-01
+ [90,]  3.382598e-64 5.231804e-06 9.999948e-01
+ [91,]  3.270736e-75 7.257965e-10 1.000000e+00
+ [92,]  4.809391e-87 7.429249e-04 9.992571e-01
+ [93,]  2.074428e-61 7.077246e-03 9.929228e-01
+ [94,]  2.170750e-35 2.779112e-07 9.999997e-01
+ [95,]  8.264114e-70 6.780159e-07 9.999993e-01
+ [96,]  2.713123e-64 6.179906e-07 9.999994e-01
+ [97,]  3.858458e-68 2.204006e-06 9.999978e-01
+ [98,]  1.357430e-73 1.655491e-01 8.344509e-01
+ [99,]  3.856448e-29 4.185587e-05 9.999581e-01
+[100,]  1.729307e-65 2.427941e-05 9.999757e-01
+[101,] 7.750436e-208 3.814081e-21 1.000000e+00
+[102,] 1.265138e-131 2.745405e-12 1.000000e+00
+[103,] 1.854996e-185 4.561563e-02 9.543844e-01
+[104,] 1.780270e-151 2.326977e-06 9.999977e-01
+[105,] 4.103223e-182 4.107109e-09 1.000000e+00
+[106,] 1.739812e-234 9.977690e-01 2.231048e-03
+[107,]  7.518768e-97 1.302946e-24 1.000000e+00
+[108,] 1.983156e-200 9.950159e-01 4.984090e-03
+[109,] 3.757198e-170 7.351273e-01 2.648727e-01
+[110,] 3.270062e-212 5.022269e-10 1.000000e+00
+[111,] 2.948183e-133 5.308175e-07 9.999995e-01
+[112,] 1.506503e-143 2.194738e-04 9.997805e-01
+[113,] 4.683021e-162 4.669895e-05 9.999533e-01
+[114,] 1.131416e-133 8.802310e-14 1.000000e+00
+[115,] 1.474217e-159 7.944428e-25 1.000000e+00
+[116,] 1.674069e-159 1.056278e-14 1.000000e+00
+[117,] 5.947332e-146 7.138900e-04 9.992861e-01
+[118,] 5.626710e-233 9.940023e-01 5.997720e-03
+[119,] 7.263297e-273 9.989558e-01 1.044215e-03
+[120,] 5.204453e-116 6.490260e-03 9.935097e-01
+[121,] 1.024453e-181 2.422785e-08 1.000000e+00
+[122,] 2.113078e-126 6.242298e-18 1.000000e+00
+[123,] 1.527396e-241 9.997944e-01 2.056299e-04
+[124,] 1.197116e-119 3.180502e-04 9.996819e-01
+[125,] 4.008250e-168 2.792789e-06 9.999972e-01
+[126,] 2.697003e-176 9.711439e-01 2.885613e-02
+[127,] 1.091436e-113 1.583651e-05 9.999842e-01
+[128,] 1.534539e-115 1.376698e-07 9.999999e-01
+[129,] 8.639934e-168 1.202169e-07 9.999999e-01
+[130,] 2.514583e-160 9.741406e-01 2.585940e-02
+[131,] 7.147511e-195 9.928128e-01 7.187216e-03
+[132,] 2.088567e-206 9.998034e-01 1.965706e-04
+[133,] 2.306680e-173 1.626309e-09 1.000000e+00
+[134,] 7.876931e-116 3.440456e-03 9.965595e-01
+[135,] 5.236683e-139 5.289877e-09 1.000000e+00
+[136,] 1.445956e-212 1.715880e-04 9.998284e-01
+[137,] 2.255753e-178 2.817855e-19 1.000000e+00
+[138,] 2.842259e-144 1.440032e-05 9.999856e-01
+[139,] 6.861389e-111 9.151710e-09 1.000000e+00
+[140,] 4.001702e-156 3.620002e-05 9.999638e-01
+[141,] 4.209580e-183 8.059414e-13 1.000000e+00
+[142,] 5.195025e-153 1.766378e-12 1.000000e+00
+[143,] 1.265138e-131 2.745405e-12 1.000000e+00
+[144,] 3.256893e-192 2.288974e-08 1.000000e+00
+[145,] 2.281718e-192 4.920337e-16 1.000000e+00
+[146,] 3.704464e-158 3.887318e-12 1.000000e+00
+[147,] 4.733003e-131 1.064328e-04 9.998936e-01
+[148,] 1.753872e-140 2.944183e-06 9.999971e-01
+[149,] 9.731574e-162 2.211738e-18 1.000000e+00
+[150,] 3.625674e-124 1.977975e-11 1.000000e+00
+
+$cluster
+  [1] 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+ [38] 1 1 1 1 1 1 1 1 1 1 1 1 1 2 3 2 3 3 3 3 3 2 3 3 3 3 3 3 2 3 3 2 3 3 3 3 3
+ [75] 2 2 2 3 3 3 3 3 3 3 3 3 2 2 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 2 3 2 2 3 3
+[112] 3 3 3 3 3 3 2 2 3 3 3 2 3 3 2 3 3 3 2 2 2 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3
+[149] 3 3
+
+$logLikelihood
+[1] 29.38217
+
+> 
+> table(test$cluster, iris$Species)
+
+    Iris-setosa Iris-versicolor Iris-virginica
+  1          50               0              0
+  2           0              10             10
+  3           0              40             40
+> 
+> #    Iris-setosa Iris-versicolor Iris-virginica
+> #  1          50               0              0
+> #  2           0              49             16
+> #  3           0               1             34
+> library(ggplot2)
+> 
+> png(paste0('D:/Projects/EM-algorithm/plots/em-mgmm-plot-iris-example-', coln$
+> 
+> options(repr.plot.width = 5, repr.plot.height =5)
+> # Scatter plot of clusters
+> ggplot(data = iris, aes(x = iris2$SepalLengthCm, y = iris2$SepalWidthCm, col$
++   geom_point(size = 3) +
++   geom_point(data = as.data.frame(test$mu), aes(x = test$mu[,1], y = test$mu$
++   labs(title = "Scatter Plot of Clusters and Centroids", x = colnames(iris2)$
++   theme(text = element_text(size = 15), aspect.ratio = 1)
+> 
+> dev.off()
+null device 
+          1 
+> png(paste0('D:/Projects/EM-algorithm/plots/em-mgmm-plot-iris-example-', coln$
+> 
+> options(repr.plot.width = 5, repr.plot.height =5)
+> # Scatter plot of clusters
+> ggplot(data = iris, aes(x = iris2$PetalLengthCm, y = iris2$PetalWidthCm, col$
++   geom_point(size = 3) +
++   geom_point(data = as.data.frame(test$mu), aes(x = test$mu[,3], y = test$mu$
++   labs(title = "Scatter Plot of Clusters and Centroids", x = colnames(iris2)$
++   theme(text = element_text(size = 15), aspect.ratio = 1)
+> 
+> dev.off()
+null device 
+          1
+> km_data <- kmeans(iris2, 3, nstart=1500) 
+> 
+> print(km_data)
+K-means clustering with 3 clusters of sizes 62, 50, 38
+
+Cluster means:
+  SepalLengthCm SepalWidthCm PetalLengthCm PetalWidthCm
+1      5.901613     2.748387      4.393548     1.433871
+2      5.006000     3.418000      1.464000     0.244000
+3      6.850000     3.073684      5.742105     2.071053
+
+Clustering vector:
+  [1] 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2
+ [38] 2 2 2 2 2 2 2 2 2 2 2 2 2 1 1 3 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+ [75] 1 1 1 3 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 3 1 3 3 3 3 1 3 3 3 3
+[112] 3 3 1 1 3 3 3 3 1 3 1 3 1 3 3 1 1 3 3 3 3 3 1 3 3 3 3 1 3 3 3 1 3 3 3 1 3
+[149] 3 1
+
+Within cluster sum of squares by cluster:
+[1] 39.82097 15.24040 23.87947
+ (between_SS / total_SS =  88.4 %)
+
+Available components:
+
+[1] "cluster"      "centers"      "totss"        "withinss"     "tot.withinss"
+[6] "betweenss"    "size"         "iter"         "ifault"      
+>
+> table(km_data$cluster, iris$Species)
+
+    Iris-setosa Iris-versicolor Iris-virginica
+  1           0              48             14
+  2          50               0              0
+  3           0               2             36
+> library(ggplot2)
+> 
+> png(paste0('D:/Projects/EM-algorithm/plots/kmeans-plot-iris-example-', colna$
+> 
+> options(repr.plot.width = 5, repr.plot.height =5)
+> # Scatter plot of clusters
+> ggplot(data = iris2, aes(x = iris2[,1], y = iris2[,2], color = as.factor(km_$
++   geom_point(size = 3) +
++   geom_point(data = as.data.frame(km_data$centers), aes(x = km_data$centers[$
++   labs(title = "Scatter Plot of Clusters and Centroids", x = colnames(iris2)$
++   theme(text = element_text(size = 15), aspect.ratio = 1)
+> 
+> dev.off()
+null device 
+          1
+> library(ggplot2)
+> 
+> png(paste0('D:/Projects/EM-algorithm/plots/kmeans-plot-iris-example-', colna$
+> 
+> options(repr.plot.width = 5, repr.plot.height =5)
+> # Scatter plot of clusters
+> ggplot(data = iris2, aes(x = iris2[,3], y = iris2[,4], color = as.factor(km_$
++   geom_point(size = 3) +
++   geom_point(data = as.data.frame(km_data$centers), aes(x = km_data$centers[$
++   labs(title = "Scatter Plot of Clusters and Centroids", x = colnames(iris2)$
++   theme(text = element_text(size = 15), aspect.ratio = 1)
+> 
+> dev.off()
+null device 
+          1
+> MallCustomers = read.csv("D:/Projects/EM-algorithm/data/Mall_Customers_Clean$
+> # Select columns for analysis
+> X <- MallCustomers[,c(2,3,4)]
+> library(plyr)
+> # Create starting values
+> Mu = daply(X, NULL, function(x) colMeans(x)) + runif(3, 0, .5)
+> Cov = dlply(X, NULL, function(x) var(x) + diag(runif(3, 0, .5)))
+>
+> column.names <- c("Age", "Annual Income (k$)", "Spending Score (1-100)")
+> row.names <- c("Cluster 1", "Cluster 2", "Cluster 3", "Cluster 4")
+> 
+> initMu = array(c(Mu[1], Mu[1] + runif(1, min=-0.1, max=0.1), Mu[1] + runif(1$
+> initCov <- list('Cluster 1' = Cov[[1]], 'Cluster 2' = Cov[[1]], 'Cluster 3' $
+> initProbs = c(.1, .3, .6, 0.9)
+> 
+> initParams <- list(mu = initMu, var = initCov, probs = initProbs)
+> 
+> print(initParams)
+$mu
+               Age Annual Income (k$) Spending Score (1-100)
+Cluster 1 39.05872           60.98757               50.22293
+Cluster 2 39.00617           61.03826               50.14896
+Cluster 3 38.97561           60.96258               50.17616
+Cluster 4 38.96774           61.04095               50.26052
+
+$var
+$var$`Cluster 1`
+                               Age Annual.Income..k.. Spending.Score..1.100.
+Age                     195.171089          -4.548744            -118.040201
+Annual.Income..k..       -4.548744         690.268165               6.716583
+Spending.Score..1.100. -118.040201           6.716583             667.351709
+
+$var$`Cluster 2`
+                               Age Annual.Income..k.. Spending.Score..1.100.
+Age                     195.171089          -4.548744            -118.040201
+Annual.Income..k..       -4.548744         690.268165               6.716583
+Spending.Score..1.100. -118.040201           6.716583             667.351709
+
+$var$`Cluster 3`
+                               Age Annual.Income..k.. Spending.Score..1.100.
+Age                     195.171089          -4.548744            -118.040201
+Annual.Income..k..       -4.548744         690.268165               6.716583
+Spending.Score..1.100. -118.040201           6.716583             667.351709
+
+$var$`Cluster 4`
+                               Age Annual.Income..k.. Spending.Score..1.100.
+Age                     195.171089          -4.548744            -118.040201
+Annual.Income..k..       -4.548744         690.268165               6.716583
+Spending.Score..1.100. -118.040201           6.716583             667.351709
+
+
+$probs
+[1] 0.1 0.3 0.6 0.9
+
+> # Run and examine
+> results = gaussmixEM(params=initParams, X=as.matrix(X), clusters = 4, tol=1e$
+Iterations of EM:
+logLikelihood at iteration - 0...
+[1] 1334.892
+params at iteration - 0...
+[1] "paramsOld\n"
+[1] 0.0 0.1 0.3 0.6 0.9
+[1] "paramsCurrent\n"
+[1] 1334.8922320    0.0526292    0.1578906    0.3158032    0.4736771
+logLikelihood at iteration - 1...
+[1] 1334.892
+params at iteration - 1...
+[1] "paramsOld\n"
+[1] 1334.8922320    0.0526292    0.1578906    0.3158032    0.4736771
+[1] "paramsCurrent\n"
+[1] 1.334892e+03 5.262966e-02 1.578906e-01 3.158030e-01 4.736768e-01
+logLikelihood at iteration - 2...
+[1] 1334.891
+params at iteration - 2...
+[1] "paramsOld\n"
+[1] 1.334892e+03 5.262966e-02 1.578906e-01 3.158030e-01 4.736768e-01
+[1] "paramsCurrent\n"
+[1] 1334.8911236    0.0526309    0.1578905    0.3158024    0.4736761
+logLikelihood at iteration - 3...
+[1] 1334.889
+params at iteration - 3...
+[1] "paramsOld\n"
+[1] 1334.8911236    0.0526309    0.1578905    0.3158024    0.4736761
+[1] "paramsCurrent\n"
+[1] 1.334889e+03 5.263422e-02 1.578902e-01 3.158011e-01 4.736745e-01
+logLikelihood at iteration - 4...
+[1] 1334.884
+params at iteration - 4...
+[1] "paramsOld\n"
+[1] 1.334889e+03 5.263422e-02 1.578902e-01 3.158011e-01 4.736745e-01
+[1] "paramsCurrent\n"
+[1] 1.334884e+03 5.264304e-02 1.578890e-01 3.157976e-01 4.736703e-01
+logLikelihood at iteration - 5...
+[1] 1334.871
+params at iteration - 5...
+[1] "paramsOld\n"
+[1] 1.334884e+03 5.264304e-02 1.578890e-01 3.157976e-01 4.736703e-01
+[1] "paramsCurrent\n"
+[1] 1.334871e+03 5.266658e-02 1.578853e-01 3.157885e-01 4.736596e-01
+logLikelihood at iteration - 6...
+[1] 1334.839
+params at iteration - 6...
+[1] "paramsOld\n"
+[1] 1.334871e+03 5.266658e-02 1.578853e-01 3.157885e-01 4.736596e-01
+[1] "paramsCurrent\n"
+[1] 1.334839e+03 5.272957e-02 1.578744e-01 3.157645e-01 4.736315e-01
+logLikelihood at iteration - 7...
+[1] 1334.755
+params at iteration - 7...
+[1] "paramsOld\n"
+[1] 1.334839e+03 5.272957e-02 1.578744e-01 3.157645e-01 4.736315e-01
+[1] "paramsCurrent\n"
+[1] 1.334755e+03 5.289897e-02 1.578436e-01 3.157008e-01 4.735566e-01
+logLikelihood at iteration - 8...
+[1] 1334.537
+params at iteration - 8...
+[1] "paramsOld\n"
+[1] 1.334755e+03 5.289897e-02 1.578436e-01 3.157008e-01 4.735566e-01
+[1] "paramsCurrent\n"
+[1] 1.334537e+03 5.335835e-02 1.577573e-01 3.155298e-01 4.733545e-01
+logLikelihood at iteration - 9...
+[1] 1333.96
+params at iteration - 9...
+[1] "paramsOld\n"
+[1] 1.334537e+03 5.335835e-02 1.577573e-01 3.155298e-01 4.733545e-01
+[1] "paramsCurrent\n"
+[1] 1.333960e+03 5.462185e-02 1.575136e-01 3.150627e-01 4.728019e-01
+logLikelihood at iteration - 10...
+[1] 1332.396
+params at iteration - 10...
+[1] "paramsOld\n"
+[1] 1.333960e+03 5.462185e-02 1.575136e-01 3.150627e-01 4.728019e-01
+[1] "paramsCurrent\n"
+[1] 1.332396e+03 5.818797e-02 1.568080e-01 3.137457e-01 4.712584e-01
+logLikelihood at iteration - 11...
+[1] 1328.018
+params at iteration - 11...
+[1] "paramsOld\n"
+[1] 1.332396e+03 5.818797e-02 1.568080e-01 3.137457e-01 4.712584e-01
+[1] "paramsCurrent\n"
+[1] 1.328018e+03 6.868712e-02 1.546555e-01 3.098295e-01 4.668278e-01
+logLikelihood at iteration - 12...
+[1] 1317.283
+params at iteration - 12...
+[1] "paramsOld\n"
+[1] 1.328018e+03 6.868712e-02 1.546555e-01 3.098295e-01 4.668278e-01
+[1] "paramsCurrent\n"
+[1] 1.317283e+03 9.854233e-02 1.481718e-01 2.983990e-01 4.548869e-01
+logLikelihood at iteration - 13...
+[1] 1299.885
+params at iteration - 13...
+[1] "paramsOld\n"
+[1] 1.317283e+03 9.854233e-02 1.481718e-01 2.983990e-01 4.548869e-01
+[1] "paramsCurrent\n"
+[1] 1299.8846893    0.1512922    0.1357538    0.2777193    0.4352347
+logLikelihood at iteration - 14...
+[1] 1281.834
+params at iteration - 14...
+[1] "paramsOld\n"
+[1] 1299.8846893    0.1512922    0.1357538    0.2777193    0.4352347
+[1] "paramsCurrent\n"
+[1] 1281.8338997    0.2029447    0.1229753    0.2585394    0.4155406
+logLikelihood at iteration - 15...
+[1] 1266.234
+params at iteration - 15...
+[1] "paramsOld\n"
+[1] 1281.8338997    0.2029447    0.1229753    0.2585394    0.4155406
+[1] "paramsCurrent\n"
+[1] 1266.2339005    0.2425631    0.1130922    0.2472070    0.3971377
+logLikelihood at iteration - 16...
+[1] 1251.816
+params at iteration - 16...
+[1] "paramsOld\n"
+[1] 1266.2339005    0.2425631    0.1130922    0.2472070    0.3971377
+[1] "paramsCurrent\n"
+[1] 1251.8157018    0.2711049    0.1059521    0.2446736    0.3782694
+logLikelihood at iteration - 17...
+[1] 1238.597
+params at iteration - 17...
+[1] "paramsOld\n"
+[1] 1251.8157018    0.2711049    0.1059521    0.2446736    0.3782694
+[1] "paramsCurrent\n"
+[1] 1238.5972326    0.2887209    0.1019682    0.2497852    0.3595257
+logLikelihood at iteration - 18...
+[1] 1228.014
+params at iteration - 18...
+[1] "paramsOld\n"
+[1] 1238.5972326    0.2887209    0.1019682    0.2497852    0.3595257
+[1] "paramsCurrent\n"
+[1] 1228.0140485    0.2962862    0.1010575    0.2580179    0.3446384
+logLikelihood at iteration - 19...
+[1] 1219.847
+params at iteration - 19...
+[1] "paramsOld\n"
+[1] 1228.0140485    0.2962862    0.1010575    0.2580179    0.3446384
+[1] "paramsCurrent\n"
+[1] 1219.8471093    0.2980560    0.1021263    0.2658781    0.3339395
+logLikelihood at iteration - 20...
+[1] 1211.801
+params at iteration - 20...
+[1] "paramsOld\n"
+[1] 1219.8471093    0.2980560    0.1021263    0.2658781    0.3339395
+[1] "paramsCurrent\n"
+[1] 1211.8008361    0.2971959    0.1060986    0.2723800    0.3243255
+logLikelihood at iteration - 21...
+[1] 1201.428
+params at iteration - 21...
+[1] "paramsOld\n"
+[1] 1211.8008361    0.2971959    0.1060986    0.2723800    0.3243255
+[1] "paramsCurrent\n"
+[1] 1201.4282291    0.2954692    0.1123442    0.2793192    0.3128675
+logLikelihood at iteration - 22...
+[1] 1191.534
+params at iteration - 22...
+[1] "paramsOld\n"
+[1] 1201.4282291    0.2954692    0.1123442    0.2793192    0.3128675
+[1] "paramsCurrent\n"
+[1] 1191.5335970    0.2941603    0.1147129    0.2873526    0.3037742
+logLikelihood at iteration - 23...
+[1] 1185.345
+params at iteration - 23...
+[1] "paramsOld\n"
+[1] 1191.5335970    0.2941603    0.1147129    0.2873526    0.3037742
+[1] "paramsCurrent\n"
+[1] 1185.3450465    0.2946557    0.1134192    0.2945972    0.2973279
+logLikelihood at iteration - 24...
+[1] 1181.192
+params at iteration - 24...
+[1] "paramsOld\n"
+[1] 1185.3450465    0.2946557    0.1134192    0.2945972    0.2973279
+[1] "paramsCurrent\n"
+[1] 1181.1924822    0.2971331    0.1109608    0.2989706    0.2929355
+logLikelihood at iteration - 25...
+[1] 1177.154
+params at iteration - 25...
+[1] "paramsOld\n"
+[1] 1181.1924822    0.2971331    0.1109608    0.2989706    0.2929355
+[1] "paramsCurrent\n"
+[1] 1177.1537957    0.3015562    0.1089477    0.2993467    0.2901495
+logLikelihood at iteration - 26...
+[1] 1172.941
+params at iteration - 26...
+[1] "paramsOld\n"
+[1] 1177.1537957    0.3015562    0.1089477    0.2993467    0.2901495
+[1] "paramsCurrent\n"
+[1] 1172.9406718    0.3071740    0.1087514    0.2962558    0.2878187
+logLikelihood at iteration - 27...
+[1] 1169.667
+params at iteration - 27...
+[1] "paramsOld\n"
+[1] 1172.9406718    0.3071740    0.1087514    0.2962558    0.2878187
+[1] "paramsCurrent\n"
+[1] 1169.6674847    0.3131553    0.1100660    0.2913166    0.2854620
+logLikelihood at iteration - 28...
+[1] 1167.505
+params at iteration - 28...
+[1] "paramsOld\n"
+[1] 1169.6674847    0.3131553    0.1100660    0.2913166    0.2854620
+[1] "paramsCurrent\n"
+[1] 1167.5050149    0.3191164    0.1119118    0.2859128    0.2830589
+logLikelihood at iteration - 29...
+[1] 1165.955
+params at iteration - 29...
+[1] "paramsOld\n"
+[1] 1167.5050149    0.3191164    0.1119118    0.2859128    0.2830589
+[1] "paramsCurrent\n"
+[1] 1165.9545772    0.3247941    0.1139154    0.2806726    0.2806179
+logLikelihood at iteration - 30...
+[1] 1164.685
+params at iteration - 30...
+[1] "paramsOld\n"
+[1] 1165.9545772    0.3247941    0.1139154    0.2806726    0.2806179
+[1] "paramsCurrent\n"
+[1] 1164.6852330    0.3301324    0.1160106    0.2757800    0.2780770
+logLikelihood at iteration - 31...
+[1] 1163.499
+params at iteration - 31...
+[1] "paramsOld\n"
+[1] 1164.6852330    0.3301324    0.1160106    0.2757800    0.2780770
+[1] "paramsCurrent\n"
+[1] 1163.4985073    0.3352900    0.1181804    0.2712354    0.2752942
+logLikelihood at iteration - 32...
+[1] 1162.235
+params at iteration - 32...
+[1] "paramsOld\n"
+[1] 1163.4985073    0.3352900    0.1181804    0.2712354    0.2752942
+[1] "paramsCurrent\n"
+[1] 1162.2353418    0.3404265    0.1204246    0.2670025    0.2721464
+logLikelihood at iteration - 33...
+[1] 1160.814
+params at iteration - 33...
+[1] "paramsOld\n"
+[1] 1162.2353418    0.3404265    0.1204246    0.2670025    0.2721464
+[1] "paramsCurrent\n"
+[1] 1160.8144728    0.3454579    0.1227498    0.2630302    0.2687621
+logLikelihood at iteration - 34...
+[1] 1159.349
+params at iteration - 34...
+[1] "paramsOld\n"
+[1] 1160.8144728    0.3454579    0.1227498    0.2630302    0.2687621
+[1] "paramsCurrent\n"
+[1] 1159.3490829    0.3500811    0.1251671    0.2591424    0.2656095
+logLikelihood at iteration - 35...
+[1] 1158.015
+params at iteration - 35...
+[1] "paramsOld\n"
+[1] 1159.3490829    0.3500811    0.1251671    0.2591424    0.2656095
+[1] "paramsCurrent\n"
+[1] 1158.0154568    0.3542104    0.1276913    0.2550507    0.2630476
+logLikelihood at iteration - 36...
+[1] 1156.833
+params at iteration - 36...
+[1] "paramsOld\n"
+[1] 1158.0154568    0.3542104    0.1276913    0.2550507    0.2630476
+[1] "paramsCurrent\n"
+[1] 1156.8328546    0.3579609    0.1303312    0.2507145    0.2609934
+logLikelihood at iteration - 37...
+[1] 1155.751
+params at iteration - 37...
+[1] "paramsOld\n"
+[1] 1156.8328546    0.3579609    0.1303312    0.2507145    0.2609934
+[1] "paramsCurrent\n"
+[1] 1155.7506236    0.3613830    0.1330706    0.2464008    0.2591457
+logLikelihood at iteration - 38...
+[1] 1154.766
+params at iteration - 38...
+[1] "paramsOld\n"
+[1] 1155.7506236    0.3613830    0.1330706    0.2464008    0.2591457
+[1] "paramsCurrent\n"
+[1] 1154.7660543    0.3644508    0.1358667    0.2424116    0.2572709
+logLikelihood at iteration - 39...
+[1] 1153.916
+params at iteration - 39...
+[1] "paramsOld\n"
+[1] 1154.7660543    0.3644508    0.1358667    0.2424116    0.2572709
+[1] "paramsCurrent\n"
+[1] 1153.9164716    0.3671494    0.1386728    0.2389165    0.2552613
+logLikelihood at iteration - 40...
+[1] 1153.217
+params at iteration - 40...
+[1] "paramsOld\n"
+[1] 1153.9164716    0.3671494    0.1386728    0.2389165    0.2552613
+[1] "paramsCurrent\n"
+[1] 1153.2165985    0.3695337    0.1414472    0.2359372    0.2530818
+logLikelihood at iteration - 41...
+[1] 1152.638
+params at iteration - 41...
+[1] "paramsOld\n"
+[1] 1153.2165985    0.3695337    0.1414472    0.2359372    0.2530818
+[1] "paramsCurrent\n"
+[1] 1152.6383580    0.3717215    0.1441373    0.2334324    0.2507088
+logLikelihood at iteration - 42...
+[1] 1152.142
+params at iteration - 42...
+[1] "paramsOld\n"
+[1] 1152.6383580    0.3717215    0.1441373    0.2334324    0.2507088
+[1] "paramsCurrent\n"
+[1] 1152.1419988    0.3738486    0.1466704    0.2313834    0.2480976
+logLikelihood at iteration - 43...
+[1] 1151.698
+params at iteration - 43...
+[1] "paramsOld\n"
+[1] 1152.1419988    0.3738486    0.1466704    0.2313834    0.2480976
+[1] "paramsCurrent\n"
+[1] 1151.6980495    0.3760283    0.1489672    0.2298309    0.2451736
+logLikelihood at iteration - 44...
+[1] 1151.282
+params at iteration - 44...
+[1] "paramsOld\n"
+[1] 1151.6980495    0.3760283    0.1489672    0.2298309    0.2451736
+[1] "paramsCurrent\n"
+[1] 1151.2816245    0.3783234    0.1509564    0.2288930    0.2418272
+logLikelihood at iteration - 45...
+[1] 1150.861
+params at iteration - 45...
+[1] "paramsOld\n"
+[1] 1151.2816245    0.3783234    0.1509564    0.2288930    0.2418272
+[1] "paramsCurrent\n"
+[1] 1150.8611341    0.3807171    0.1525864    0.2287923    0.2379042
+logLikelihood at iteration - 46...
+[1] 1150.391
+params at iteration - 46...
+[1] "paramsOld\n"
+[1] 1150.8611341    0.3807171    0.1525864    0.2287923    0.2379042
+[1] "paramsCurrent\n"
+[1] 1150.3910841    0.3830838    0.1538333    0.2299021    0.2331808
+logLikelihood at iteration - 47...
+[1] 1149.786
+params at iteration - 47...
+[1] "paramsOld\n"
+[1] 1150.3910841    0.3830838    0.1538333    0.2299021    0.2331808
+[1] "paramsCurrent\n"
+[1] 1149.7864159    0.3852002    0.1547023    0.2327925    0.2273050
+logLikelihood at iteration - 48...
+[1] 1148.791
+params at iteration - 48...
+[1] "paramsOld\n"
+[1] 1149.7864159    0.3852002    0.1547023    0.2327925    0.2273050
+[1] "paramsCurrent\n"
+[1] 1148.7914351    0.3868353    0.1552371    0.2381887    0.2197389
+logLikelihood at iteration - 49...
+[1] 1146.699
+params at iteration - 49...
+[1] "paramsOld\n"
+[1] 1148.7914351    0.3868353    0.1552371    0.2381887    0.2197389
+[1] "paramsCurrent\n"
+[1] 1146.6985506    0.3878308    0.1555295    0.2464856    0.2101541
+logLikelihood at iteration - 50...
+[1] 1142.747
+params at iteration - 50...
+[1] "paramsOld\n"
+[1] 1146.6985506    0.3878308    0.1555295    0.2464856    0.2101541
+[1] "paramsCurrent\n"
+[1] 1142.7468878    0.3880879    0.1556912    0.2558724    0.2003485
+logLikelihood at iteration - 51...
+[1] 1139.073
+params at iteration - 51...
+[1] "paramsOld\n"
+[1] 1142.7468878    0.3880879    0.1556912    0.2558724    0.2003485
+[1] "paramsCurrent\n"
+[1] 1139.0725554    0.3876633    0.1557963    0.2621238    0.1944166
+logLikelihood at iteration - 52...
+[1] 1137.805
+params at iteration - 52...
+[1] "paramsOld\n"
+[1] 1139.0725554    0.3876633    0.1557963    0.2621238    0.1944166
+[1] "paramsCurrent\n"
+[1] 1137.8048808    0.3870404    0.1558469    0.2642851    0.1928276
+logLikelihood at iteration - 53...
+[1] 1137.543
+params at iteration - 53...
+[1] "paramsOld\n"
+[1] 1137.8048808    0.3870404    0.1558469    0.2642851    0.1928276
+[1] "paramsCurrent\n"
+[1] 1137.5429850    0.3866172    0.1558497    0.2649003    0.1926327
+logLikelihood at iteration - 54...
+[1] 1137.476
+params at iteration - 54...
+[1] "paramsOld\n"
+[1] 1137.5429850    0.3866172    0.1558497    0.2649003    0.1926327
+[1] "paramsCurrent\n"
+[1] 1137.4763727    0.3863698    0.1558395    0.2651595    0.1926313
+logLikelihood at iteration - 55...
+[1] 1137.451
+params at iteration - 55...
+[1] "paramsOld\n"
+[1] 1137.4763727    0.3863698    0.1558395    0.2651595    0.1926313
+[1] "paramsCurrent\n"
+[1] 1137.4507767    0.3862224    0.1558312    0.2652961    0.1926502
+logLikelihood at iteration - 56...
+[1] 1137.438
+params at iteration - 56...
+[1] "paramsOld\n"
+[1] 1137.4507767    0.3862224    0.1558312    0.2652961    0.1926502
+[1] "paramsCurrent\n"
+[1] 1137.4377861    0.3861335    0.1558266    0.2653742    0.1926657
+logLikelihood at iteration - 57...
+[1] 1137.43
+params at iteration - 57...
+[1] "paramsOld\n"
+[1] 1137.4377861    0.3861335    0.1558266    0.2653742    0.1926657
+[1] "paramsCurrent\n"
+[1] 1137.4303779    0.3860795    0.1558243    0.2654202    0.1926760
+logLikelihood at iteration - 58...
+[1] 1137.426
+params at iteration - 58...
+[1] "paramsOld\n"
+[1] 1137.4303779    0.3860795    0.1558243    0.2654202    0.1926760
+[1] "paramsCurrent\n"
+[1] 1137.4259883    0.3860466    0.1558233    0.2654477    0.1926823
+logLikelihood at iteration - 59...
+[1] 1137.423
+params at iteration - 59...
+[1] "paramsOld\n"
+[1] 1137.4259883    0.3860466    0.1558233    0.2654477    0.1926823
+[1] "paramsCurrent\n"
+[1] 1137.4233566    0.3860266    0.1558230    0.2654642    0.1926862
+logLikelihood at iteration - 60...
+[1] 1137.422
+params at iteration - 60...
+[1] "paramsOld\n"
+[1] 1137.4233566    0.3860266    0.1558230    0.2654642    0.1926862
+[1] "paramsCurrent\n"
+[1] 1137.4217724    0.3860144    0.1558230    0.2654741    0.1926885
+logLikelihood at iteration - 61...
+[1] 1137.421
+params at iteration - 61...
+[1] "paramsOld\n"
+[1] 1137.4217724    0.3860144    0.1558230    0.2654741    0.1926885
+[1] "paramsCurrent\n"
+[1] 1137.4208168    0.3860070    0.1558230    0.2654801    0.1926899
+logLikelihood at iteration - 62...
+[1] 1137.42
+params at iteration - 62...
+[1] "paramsOld\n"
+[1] 1137.4208168    0.3860070    0.1558230    0.2654801    0.1926899
+[1] "paramsCurrent\n"
+[1] 1137.4202395    0.3860024    0.1558231    0.2654837    0.1926907
+logLikelihood at iteration - 63...
+[1] 1137.42
+params at iteration - 63...
+[1] "paramsOld\n"
+[1] 1137.4202395    0.3860024    0.1558231    0.2654837    0.1926907
+[1] "paramsCurrent\n"
+[1] 1137.4198901    0.3859996    0.1558232    0.2654859    0.1926912
+logLikelihood at iteration - 64...
+[1] 1137.42
+params at iteration - 64...
+[1] "paramsOld\n"
+[1] 1137.4198901    0.3859996    0.1558232    0.2654859    0.1926912
+[1] "paramsCurrent\n"
+[1] 1137.4196784    0.3859979    0.1558233    0.2654872    0.1926916
+logLikelihood at iteration - 65...
+[1] 1137.42
+params at iteration - 65...
+[1] "paramsOld\n"
+[1] 1137.4196784    0.3859979    0.1558233    0.2654872    0.1926916
+[1] "paramsCurrent\n"
+[1] 1137.4195499    0.3859969    0.1558233    0.2654881    0.1926917
+logLikelihood at iteration - 66...
+[1] 1137.419
+params at iteration - 66...
+[1] "paramsOld\n"
+[1] 1137.4195499    0.3859969    0.1558233    0.2654881    0.1926917
+[1] "paramsCurrent\n"
+[1] 1137.4194719    0.3859963    0.1558233    0.2654885    0.1926919
+logLikelihood at iteration - 67...
+[1] 1137.419
+params at iteration - 67...
+[1] "paramsOld\n"
+[1] 1137.4194719    0.3859963    0.1558233    0.2654885    0.1926919
+[1] "paramsCurrent\n"
+[1] 1137.4194244    0.3859959    0.1558234    0.2654888    0.1926919
+logLikelihood at iteration - 68...
+[1] 1137.419
+params at iteration - 68...
+[1] "paramsOld\n"
+[1] 1137.4194244    0.3859959    0.1558234    0.2654888    0.1926919
+[1] "paramsCurrent\n"
+[1] 1137.4193955    0.3859956    0.1558234    0.2654890    0.1926920
+logLikelihood at iteration - 69...
+[1] 1137.419
+params at iteration - 69...
+[1] "paramsOld\n"
+[1] 1137.4193955    0.3859956    0.1558234    0.2654890    0.1926920
+[1] "paramsCurrent\n"
+[1] 1137.4193779    0.3859955    0.1558234    0.2654891    0.1926920
+logLikelihood at iteration - 70...
+[1] 1137.419
+params at iteration - 70...
+[1] "paramsOld\n"
+[1] 1137.4193779    0.3859955    0.1558234    0.2654891    0.1926920
+[1] "paramsCurrent\n"
+[1] 1137.4193672    0.3859954    0.1558234    0.2654892    0.1926920
+> 
+> print(results)
+$probs
+[1] 0.3859954 0.1558234 0.2654892 0.1926920
+
+$mu
+               Age Annual Income (k$) Spending Score (1-100)
+Cluster 1 49.81956           46.22691               41.17287
+Cluster 2 44.28263           89.50393               18.44784
+Cluster 3 24.23063           45.49864               58.77610
+Cluster 4 32.62532           86.61709               82.14371
+
+$var
+$var$`Cluster 1`
+           Age Annual.Income..k.. Spending.Score..1.100.
+[1,] 153.35155           47.62875               28.92769
+[2,]  47.62875          237.68443              176.46862
+[3,]  28.92769          176.46862              251.45989
+
+$var$`Cluster 2`
+            Age Annual.Income..k.. Spending.Score..1.100.
+[1,]  68.502556          -37.25932               2.527498
+[2,] -37.259320          283.23259              23.914061
+[3,]   2.527498           23.91406             102.752500
+
+$var$`Cluster 3`
+           Age Annual.Income..k.. Spending.Score..1.100.
+[1,]  24.33729          -25.83665               25.32411
+[2,] -25.83665          371.67518             -365.45732
+[3,]  25.32411         -365.45732              485.23215
+
+$var$`Cluster 4`
+           Age Annual.Income..k.. Spending.Score..1.100.
+[1,] 13.361388          -6.546004               5.033159
+[2,] -6.546004         264.333602              -5.017444
+[3,]  5.033159          -5.017444              87.794741
+
+
+$resp
+               [,1]         [,2]         [,3]         [,4]
+  [1,] 9.979584e-01 7.900541e-09 2.041600e-03 7.374549e-10
+  [2,] 1.527627e-08 2.604905e-19 9.999992e-01 7.505029e-07
+  [3,] 9.999995e-01 5.193360e-07 5.401999e-11 4.397672e-19
+  [4,] 1.789247e-07 1.495425e-17 9.999947e-01 5.121311e-06
+  [5,] 9.974024e-01 6.545442e-07 2.596766e-03 2.215889e-07
+  [6,] 4.265858e-07 2.673104e-17 9.999966e-01 2.951038e-06
+  [7,] 9.999268e-01 7.322484e-05 1.572467e-11 2.330093e-18
+  [8,] 3.367436e-11 5.783296e-23 9.999982e-01 1.808412e-06
+  [9,] 9.985817e-01 1.418256e-03 1.375670e-24 4.235312e-38
+ [10,] 1.348978e-05 3.675595e-14 9.995169e-01 4.696591e-04
+ [11,] 9.992572e-01 7.428496e-04 3.035314e-24 3.991595e-37
+ [12,] 4.936241e-11 2.244228e-21 9.979947e-01 2.005287e-03
+ [13,] 9.990700e-01 9.300265e-04 5.115333e-18 1.761913e-27
+ [14,] 5.697995e-07 5.657629e-17 9.999823e-01 1.714869e-05
+ [15,] 9.998966e-01 1.033714e-04 6.333849e-10 2.900561e-16
+ [16,] 2.083563e-07 5.880583e-18 9.999959e-01 3.842152e-06
+ [17,] 9.998856e-01 6.168537e-06 1.082475e-04 5.271475e-09
+ [18,] 1.927402e-04 3.820500e-14 9.998061e-01 1.170293e-06
+ [19,] 9.997291e-01 2.709302e-04 1.613613e-11 8.817715e-18
+ [20,] 1.094249e-09 2.830597e-20 9.921809e-01 7.819098e-03
+ [21,] 9.997674e-01 9.452479e-06 2.231778e-04 6.947717e-09
+ [22,] 1.212613e-05 3.799893e-15 9.999297e-01 5.813880e-05
+ [23,] 9.969672e-01 3.032793e-03 4.492018e-13 4.985427e-22
+ [24,] 5.423539e-05 1.294589e-13 9.982834e-01 1.662322e-03
+ [25,] 9.961252e-01 3.874750e-03 1.616783e-14 5.821851e-24
+ [26,] 1.953159e-06 2.396502e-16 9.982242e-01 1.773816e-03
+ [27,] 9.998330e-01 1.667826e-04 1.921531e-07 1.208201e-12
+ [28,] 6.847003e-02 7.377816e-09 9.289155e-01 2.614485e-03
+ [29,] 9.998803e-01 1.112976e-04 8.406919e-06 6.351753e-11
+ [30,] 1.750260e-07 6.089591e-19 9.999494e-01 5.037876e-05
+ [31,] 9.831056e-01 1.689444e-02 3.671328e-19 1.424246e-32
+ [32,] 4.578226e-05 3.395188e-15 9.999452e-01 9.051425e-06
+ [33,] 9.561900e-01 4.380996e-02 2.114640e-14 4.427161e-26
+ [34,] 2.451348e-07 2.103571e-20 9.999974e-01 2.315991e-06
+ [35,] 9.897584e-01 1.024157e-02 4.340622e-11 5.596238e-20
+ [36,] 7.068173e-06 5.897257e-17 9.999668e-01 2.613747e-05
+ [37,] 9.952600e-01 4.739906e-03 1.083775e-07 2.717525e-15
+ [38,] 4.926313e-04 8.350366e-13 9.939771e-01 5.530230e-03
+ [39,] 9.988858e-01 8.574903e-04 2.566987e-04 1.354302e-10
+ [40,] 1.483669e-04 6.020784e-15 9.998315e-01 2.017059e-05
+ [41,] 9.994504e-01 5.496418e-04 2.120887e-17 6.770377e-27
+ [42,] 2.985449e-06 2.152900e-18 9.975317e-01 2.465363e-03
+ [43,] 9.993810e-01 6.186803e-04 2.877275e-07 1.632583e-12
+ [44,] 5.031741e-02 4.362799e-09 9.469186e-01 2.763950e-03
+ [45,] 9.964638e-01 3.536199e-03 1.570123e-08 2.786378e-15
+ [46,] 3.335608e-03 1.295831e-11 9.965083e-01 1.560518e-04
+ [47,] 9.999883e-01 9.004734e-06 2.640209e-06 7.543108e-09
+ [48,] 2.609958e-01 4.548484e-07 7.389878e-01 1.598229e-05
+ [49,] 6.486894e-01 6.910912e-06 3.512990e-01 4.716284e-06
+ [50,] 7.932776e-01 1.327730e-05 2.067035e-01 5.623267e-06
+ [51,] 9.999750e-01 2.167752e-05 3.331453e-06 5.809772e-09
+ [52,] 1.870494e-01 4.818111e-08 8.065365e-01 6.413981e-03
+ [53,] 2.385096e-01 2.649887e-07 7.607541e-01 7.359881e-04
+ [54,] 9.999965e-01 3.517433e-06 3.986262e-11 3.391838e-14
+ [55,] 9.998449e-01 1.548521e-04 2.816512e-07 3.270270e-11
+ [56,] 9.996354e-01 3.611289e-04 3.425341e-06 1.798730e-10
+ [57,] 9.999496e-01 5.021577e-05 2.058997e-07 1.335369e-10
+ [58,] 9.999412e-01 5.875541e-05 1.797315e-19 3.911690e-28
+ [59,] 1.131020e-01 2.160115e-07 8.868028e-01 9.495268e-05
+ [60,] 9.998051e-01 1.949280e-04 8.859589e-09 7.608643e-13
+ [61,] 9.999953e-01 4.708459e-06 9.738304e-20 1.231707e-26
+ [62,] 2.612245e-02 1.519983e-09 9.738758e-01 1.768021e-06
+ [63,] 9.999797e-01 2.031139e-05 1.085410e-17 3.508344e-24
+ [64,] 9.999942e-01 5.812437e-06 1.267136e-08 1.598162e-10
+ [65,] 9.999574e-01 4.258126e-05 7.472451e-15 3.701456e-20
+ [66,] 1.787453e-02 3.086077e-10 9.821227e-01 2.815173e-06
+ [67,] 9.993435e-01 5.341271e-05 6.004782e-04 2.567272e-06
+ [68,] 9.999450e-01 5.500467e-05 9.261070e-19 2.288191e-26
+ [69,] 1.732468e-02 4.112101e-10 9.826689e-01 6.376605e-06
+ [70,] 5.579429e-01 1.623256e-05 4.419076e-01 1.332243e-04
+ [71,] 9.999932e-01 6.779727e-06 4.051599e-20 6.256393e-27
+ [72,] 9.991486e-01 8.458405e-04 5.600599e-06 6.934511e-10
+ [73,] 9.998855e-01 1.144917e-04 5.402305e-13 1.037188e-17
+ [74,] 9.999849e-01 1.512304e-05 1.001335e-12 4.621690e-16
+ [75,] 9.996192e-01 3.808403e-04 1.478295e-12 3.976903e-17
+ [76,] 7.269012e-02 2.517665e-07 9.267761e-01 5.334938e-04
+ [77,] 9.998574e-01 6.745405e-05 7.238219e-05 2.717290e-06
+ [78,] 9.940947e-01 2.418620e-04 5.636378e-03 2.702108e-05
+ [79,] 4.008498e-02 1.399220e-07 9.598676e-01 4.728087e-05
+ [80,] 9.974867e-01 2.512558e-03 7.654934e-07 1.083724e-10
+ [81,] 9.998727e-01 1.272998e-04 3.198656e-11 1.732836e-14
+ [82,] 9.680300e-01 1.827627e-05 3.010393e-02 1.847833e-03
+ [83,] 9.991340e-01 8.659973e-04 2.012572e-18 7.731324e-27
+ [84,] 9.987018e-01 1.277212e-03 2.095427e-05 1.381426e-08
+ [85,] 2.840662e-02 9.688970e-09 9.715360e-01 5.734029e-05
+ [86,] 9.992796e-01 7.177495e-04 2.604394e-06 3.000250e-09
+ [87,] 9.999788e-01 2.120879e-05 3.345166e-10 2.473845e-11
+ [88,] 3.523864e-02 7.105020e-08 9.646422e-01 1.190659e-04
+ [89,] 7.303419e-01 2.967594e-06 1.900042e-01 7.965098e-02
+ [90,] 9.983476e-01 1.652188e-03 2.330281e-07 3.436452e-10
+ [91,] 9.999808e-01 1.920139e-05 1.491598e-19 1.750790e-24
+ [92,] 1.297106e-02 3.409505e-06 9.870255e-01 6.097368e-08
+ [93,] 9.990729e-01 9.251466e-04 1.890124e-06 2.943740e-08
+ [94,] 9.750124e-01 1.659472e-02 8.390031e-03 2.809956e-06
+ [95,] 3.529387e-01 1.384799e-03 6.455416e-01 1.348908e-04
+ [96,] 4.618777e-02 1.082172e-06 9.535171e-01 2.940077e-04
+ [97,] 9.981348e-01 1.858685e-03 6.465989e-06 4.462076e-08
+ [98,] 9.213905e-02 8.476201e-06 9.071460e-01 7.064933e-04
+ [99,] 9.867173e-01 1.327981e-02 2.905406e-06 1.578540e-09
+[100,] 1.932316e-02 7.959414e-07 9.806681e-01 7.922936e-06
+[101,] 1.331145e-02 3.324758e-05 9.866524e-01 2.860531e-06
+[102,] 9.979605e-01 2.038979e-03 5.583403e-07 6.829777e-09
+[103,] 9.999922e-01 7.816813e-06 3.348563e-19 2.048076e-22
+[104,] 1.000384e-01 1.921286e-06 8.953298e-01 4.629817e-03
+[105,] 9.998900e-01 1.094896e-04 2.842526e-07 1.906542e-07
+[106,] 1.043630e-02 1.164365e-05 9.895508e-01 1.208507e-06
+[107,] 9.997535e-01 2.464931e-04 3.532518e-18 3.716710e-23
+[108,] 9.958110e-01 4.188995e-03 1.069514e-09 1.231469e-12
+[109,] 9.981664e-01 1.833604e-03 1.664420e-19 4.856145e-27
+[110,] 9.995090e-01 4.909813e-04 4.261984e-18 1.368447e-23
+[111,] 9.998553e-01 1.446867e-04 1.773434e-17 1.269933e-21
+[112,] 2.704000e-02 2.224383e-07 9.729228e-01 3.702447e-05
+[113,] 9.303464e-01 2.303007e-02 4.655283e-02 7.072821e-05
+[114,] 1.028499e-02 3.119422e-06 9.897098e-01 2.100068e-06
+[115,] 1.158850e-02 1.755269e-06 9.884071e-01 2.641860e-06
+[116,] 1.604487e-02 1.347392e-06 9.839408e-01 1.300981e-05
+[117,] 9.933255e-01 6.674495e-03 1.199543e-15 2.800163e-21
+[118,] 9.999383e-01 6.076195e-05 1.143906e-07 8.735188e-07
+[119,] 9.601079e-01 3.989205e-02 7.015146e-08 1.062952e-10
+[120,] 9.998066e-01 1.932671e-04 2.928557e-08 1.317198e-07
+[121,] 1.907549e-01 1.227849e-05 7.665799e-01 4.265292e-02
+[122,] 8.156027e-01 1.149923e-01 6.933889e-02 6.610194e-05
+[123,] 9.850781e-01 1.869576e-04 6.425746e-04 1.409233e-02
+[124,] 9.049693e-03 5.305175e-13 3.899332e-08 9.909503e-01
+[125,] 3.082110e-04 2.405102e-03 9.972867e-01 2.539215e-08
+[126,] 1.553928e-02 3.077587e-10 1.187822e-04 9.843419e-01
+[127,] 1.841869e-01 8.150919e-01 7.210812e-04 9.587686e-08
+[128,] 8.097642e-03 8.485773e-14 1.896600e-09 9.919024e-01
+[129,] 1.912156e-04 9.998088e-01 1.285206e-13 2.632510e-27
+[130,] 1.329634e-01 1.769334e-08 9.446437e-06 8.670271e-01
+[131,] 1.891760e-05 9.999808e-01 3.305578e-07 6.643585e-19
+[132,] 2.124182e-01 3.043161e-08 6.642691e-06 7.875752e-01
+[133,] 9.960806e-04 3.347611e-03 9.956549e-01 1.453451e-06
+[134,] 3.996258e-02 2.042947e-08 5.252023e-04 9.595122e-01
+[135,] 1.130332e-07 3.642111e-02 9.635788e-01 4.050422e-15
+[136,] 2.388999e-03 2.607187e-13 1.160793e-06 9.976098e-01
+[137,] 2.708053e-06 9.999914e-01 5.863487e-06 6.024894e-18
+[138,] 2.596988e-02 7.266711e-09 8.749156e-05 9.739426e-01
+[139,] 2.086128e-07 1.528299e-02 9.847168e-01 5.031611e-14
+[140,] 5.441855e-02 4.202693e-08 2.369422e-05 9.455577e-01
+[141,] 2.652449e-06 9.999973e-01 1.119972e-12 8.335878e-28
+[142,] 1.005921e-03 1.729783e-14 8.971827e-09 9.989941e-01
+[143,] 7.760788e-03 1.598658e-02 9.758724e-01 3.801884e-04
+[144,] 2.036278e-03 9.237063e-13 4.953471e-08 9.979637e-01
+[145,] 2.753566e-07 1.127370e-01 8.872627e-01 3.938917e-12
+[146,] 1.041878e-03 1.461162e-15 6.776523e-09 9.989581e-01
+[147,] 4.454000e-02 9.554590e-01 1.019129e-06 4.583653e-10
+[148,] 1.261107e-02 5.366507e-09 7.732441e-06 9.873812e-01
+[149,] 4.980965e-05 9.195459e-01 8.040426e-02 4.760000e-09
+[150,] 1.663948e-03 2.683074e-13 1.498397e-09 9.983361e-01
+[151,] 8.580858e-06 9.999642e-01 2.726344e-05 6.048898e-14
+[152,] 1.448848e-02 1.012821e-11 4.946081e-10 9.855115e-01
+[153,] 3.069267e-05 9.999565e-01 1.276456e-05 2.145234e-13
+[154,] 5.752032e-02 1.801461e-08 1.723705e-07 9.424795e-01
+[155,] 8.082486e-06 9.999915e-01 4.070276e-07 1.904994e-16
+[156,] 2.476113e-03 2.633967e-13 1.416693e-07 9.975237e-01
+[157,] 1.226375e-08 9.979659e-01 2.034044e-03 4.735679e-17
+[158,] 5.374822e-03 2.966680e-10 2.099847e-06 9.946231e-01
+[159,] 1.135859e-08 9.811692e-01 1.883082e-02 3.872102e-16
+[160,] 1.112121e-02 7.995006e-09 2.019815e-05 9.888586e-01
+[161,] 3.750417e-02 9.624958e-01 2.327692e-11 5.120658e-16
+[162,] 2.743493e-03 1.197405e-11 2.400842e-07 9.972563e-01
+[163,] 4.912799e-10 2.494976e-02 9.750502e-01 1.772000e-15
+[164,] 8.195751e-04 2.901304e-14 2.896303e-10 9.991804e-01
+[165,] 2.720865e-05 9.999728e-01 5.809937e-09 7.028599e-15
+[166,] 9.680592e-03 2.366313e-08 1.108076e-08 9.903194e-01
+[167,] 4.592760e-07 9.999771e-01 2.240003e-05 1.554404e-12
+[168,] 6.295831e-04 2.005334e-14 1.093756e-12 9.993704e-01
+[169,] 4.897434e-06 9.961578e-01 3.837250e-03 5.066478e-08
+[170,] 8.594724e-03 2.061598e-05 1.475758e-05 9.913699e-01
+[171,] 9.803720e-09 9.998809e-01 1.191250e-04 4.435456e-14
+[172,] 1.869010e-03 4.413507e-09 1.746421e-07 9.981308e-01
+[173,] 1.997003e-09 9.965136e-01 3.486358e-03 1.120736e-13
+[174,] 1.469481e-03 3.978344e-13 5.001686e-13 9.985305e-01
+[175,] 2.789495e-08 1.000000e+00 2.792822e-10 6.620383e-21
+[176,] 6.690457e-04 4.623888e-12 1.060217e-10 9.993310e-01
+[177,] 2.394477e-07 9.999998e-01 9.229286e-14 5.071020e-25
+[178,] 2.849706e-03 2.416834e-07 4.438588e-06 9.971456e-01
+[179,] 1.467550e-08 1.000000e+00 8.630952e-15 2.525356e-26
+[180,] 6.433119e-04 1.825530e-12 2.599372e-14 9.993567e-01
+[181,] 3.075169e-07 9.999346e-01 6.434890e-05 7.278783e-07
+[182,] 1.851149e-04 1.504834e-11 5.519446e-14 9.998149e-01
+[183,] 7.829440e-11 1.000000e+00 3.387175e-08 2.096886e-16
+[184,] 1.420088e-04 3.606075e-12 5.193944e-14 9.998580e-01
+[185,] 6.688491e-06 9.999880e-01 5.110979e-07 4.761005e-06
+[186,] 1.696554e-04 1.717568e-14 8.766305e-17 9.998303e-01
+[187,] 7.159433e-09 1.000000e+00 3.391808e-13 1.270513e-18
+[188,] 6.254190e-05 1.343706e-06 2.140731e-09 9.999361e-01
+[189,] 4.439720e-12 9.999989e-01 1.103478e-06 2.675812e-13
+[190,] 1.962323e-04 1.825493e-10 1.484280e-16 9.998038e-01
+[191,] 5.417131e-11 9.998147e-01 1.853283e-04 4.823510e-09
+[192,] 4.923793e-05 1.383946e-06 3.424643e-11 9.999494e-01
+[193,] 8.540892e-18 9.997068e-01 2.931567e-04 9.669980e-14
+[194,] 9.934358e-05 3.026151e-11 2.675856e-22 9.999007e-01
+[195,] 8.552459e-17 1.000000e+00 8.016009e-12 7.859335e-17
+[196,] 8.979824e-07 2.675738e-08 1.586447e-20 9.999991e-01
+[197,] 1.706668e-15 1.000000e+00 1.035942e-13 7.344598e-12
+[198,] 1.603590e-08 4.048297e-07 2.502864e-20 9.999996e-01
+[199,] 1.823440e-23 1.000000e+00 1.727279e-09 1.280870e-10
+[200,] 6.462422e-10 3.696456e-09 1.501399e-27 1.000000e+00
+
+$cluster
+  [1] 1 3 1 3 1 3 1 3 1 3 1 3 1 3 1 3 1 3 1 3 1 3 1 3 1 3 1 3 1 3 1 3 1 3 1 3 1
+ [38] 3 1 3 1 3 1 3 1 3 1 3 1 1 1 3 3 1 1 1 1 1 3 1 1 3 1 1 1 3 1 1 3 1 1 1 1 1
+ [75] 1 3 1 1 3 1 1 1 1 1 3 1 1 3 1 1 1 3 1 1 3 3 1 3 1 3 3 1 1 3 1 3 1 1 1 1 1
+[112] 3 1 3 3 3 1 1 1 1 3 1 1 4 3 4 2 4 2 4 2 4 3 4 3 4 2 4 3 4 2 4 3 4 3 4 2 4
+[149] 2 4 2 4 2 4 2 4 2 4 2 4 2 4 3 4 2 4 2 4 2 4 2 4 2 4 2 4 2 4 2 4 2 4 2 4 2
+[186] 4 2 4 2 4 2 4 2 4 2 4 2 4 2 4
+
+$logLikelihood
+[1] 1137.419
+
+> library(ggplot2)
+> 
+> png(paste0('D:/Projects/EM-algorithm/plots/em-mgmm-plot-mall-customers-examp$
+> 
+> options(repr.plot.width = 5, repr.plot.height =5)
+> # Scatter plot of clusters
+> ggplot(data = X, aes(x = X[,2], y = X[,3], color = as.factor(c(results$clust$
++   geom_point(size = 3) +
++   geom_point(data = as.data.frame(results$mu), aes(x = results$mu[,2], y = r$
++   labs(title = "Scatter Plot of Clusters and Centroids", x = colnames(X)[2],$
++   theme(text = element_text(size = 15), aspect.ratio = 1)
+Error in `geom_point()`:
+! Problem while computing aesthetics.
+ℹ Error occurred in the 1st layer.
+Caused by error in `check_aesthetics()`:
+! Aesthetics must be either length 1 or the same as the data (200)
+✖ Fix the following mappings: `colour`
+Run `rlang::last_trace()` to see where the error occurred.
+> 
+> dev.off()
+null device 
+          1
+> png(paste0('D:/Projects/EM-algorithm/plots/em-mgmm-plot-mall-customers-examp$
+> 
+> options(repr.plot.width = 5, repr.plot.height =5)
+> # Scatter plot of clusters
+> ggplot(data = X, aes(x = X[,1], y = X[,3], color = as.factor(c(results$clust$
++   geom_point(size = 3) +
++   geom_point(data = as.data.frame(results$mu), aes(x = results$mu[,1], y = r$
++   labs(title = "Scatter Plot of Clusters and Centroids", x = colnames(X)[1],$
++   theme(text = element_text(size = 15), aspect.ratio = 1)
+Error in `geom_point()`:
+! Problem while computing aesthetics.
+ℹ Error occurred in the 1st layer.
+Caused by error in `check_aesthetics()`:
+! Aesthetics must be either length 1 or the same as the data (200)
+✖ Fix the following mappings: `colour`
+Run `rlang::last_trace()` to see where the error occurred.
+> 
+> dev.off()
+null device 
+          1
+> png(paste0('D:/Projects/EM-algorithm/plots/em-mgmm-plot-mall-customers-examp$
+> 
+> options(repr.plot.width = 5, repr.plot.height =5)
+> # Scatter plot of clusters
+> ggplot(data = X, aes(x = X[,1], y = X[,2], color = as.factor(c(results$clust$
++   geom_point(size = 3) +
++   geom_point(data = as.data.frame(results$mu), aes(x = results$mu[,1], y = r$
++   labs(title = "Scatter Plot of Clusters and Centroids", x = colnames(X)[1],$
++   theme(text = element_text(size = 15), aspect.ratio = 1)
+Error in `geom_point()`:
+! Problem while computing aesthetics.
+ℹ Error occurred in the 1st layer.
+Caused by error in `check_aesthetics()`:
+! Aesthetics must be either length 1 or the same as the data (200)
+✖ Fix the following mappings: `colour`
+Run `rlang::last_trace()` to see where the error occurred.
+> 
+> dev.off()
+null device 
+          1
+> km_data_2 <- kmeans(X, 4, nstart=1500) 
+> 
+> print(km_data_2)
+K-means clustering with 4 clusters of sizes 39, 95, 38, 28
+
+Cluster means:
+       Age Annual.Income..k.. Spending.Score..1.100.
+1 32.69231           86.53846               82.12821
+2 44.89474           48.70526               42.63158
+3 40.39474           87.00000               18.63158
+4 24.82143           28.71429               74.25000
+
+Clustering vector:
+  [1] 4 4 2 4 2 4 2 4 2 4 2 4 2 4 2 4 2 4 2 4 2 4 2 4 2 4 2 4 2 4 2 4 2 4 2 4 2
+ [38] 4 2 4 2 4 2 4 2 4 2 2 2 2 2 4 2 2 2 2 2 2 2 2 2 4 2 2 2 4 2 2 4 2 2 2 2 2
+ [75] 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2
+[112] 2 2 2 2 2 2 2 2 2 2 2 2 1 3 1 3 1 3 1 3 1 3 1 3 1 3 1 3 1 3 1 3 1 3 1 3 1
+[149] 3 1 3 1 3 1 3 1 3 1 3 1 3 1 3 1 3 1 3 1 3 1 3 1 3 1 3 1 3 1 3 1 3 1 3 1 3
+[186] 1 3 1 3 1 3 1 3 1 3 1 3 1 3 1
+
+Within cluster sum of squares by cluster:
+[1] 13972.359 62300.800 18993.921  9099.071
+ (between_SS / total_SS =  66.2 %)
+
+Available components:
+
+[1] "cluster"      "centers"      "totss"        "withinss"     "tot.withinss"
+[6] "betweenss"    "size"         "iter"         "ifault"
+> library(ggplot2)
+> 
+> png(paste0('D:/Projects/EM-algorithm/plots/kmeans-plot-mall-customers-exampl$
+> 
+> options(repr.plot.width = 5, repr.plot.height =5)
+> # Scatter plot of clusters
+> ggplot(data = X, aes(x = X[,2], y = X[,3], color = as.factor(km_data_2$clust$
++   geom_point(size = 3) +
++   geom_point(data = as.data.frame(km_data_2$centers), aes(x = km_data_2$cent$
++   labs(title = "Scatter Plot of Clusters and Centroids", x = colnames(X)[2],$
++   theme(text = element_text(size = 15), aspect.ratio = 1)
+> 
+> dev.off()
+null device 
+          1
+> png(paste0('D:/Projects/EM-algorithm/plots/kmeans-plot-mall-customers-exampl$
+> 
+> options(repr.plot.width = 5, repr.plot.height =5)
+> # Scatter plot of clusters
+> ggplot(data = X, aes(x = X[,1], y = X[,3], color = as.factor(km_data_2$clust$
++   geom_point(size = 3) +
++   geom_point(data = as.data.frame(km_data_2$centers), aes(x = km_data_2$cent$
++   labs(title = "Scatter Plot of Clusters and Centroids", x = colnames(X)[1],$
++   theme(text = element_text(size = 15), aspect.ratio = 1)
+> 
+> dev.off()
+null device 
+          1
+> png(paste0('D:/Projects/EM-algorithm/plots/kmeans-plot-mall-customers-exampl$
+> 
+> options(repr.plot.width = 5, repr.plot.height =5)
+> # Scatter plot of clusters
+> ggplot(data = X, aes(x = X[,1], y = X[,2], color = as.factor(km_data_2$clust$
++   geom_point(size = 3) +
++   geom_point(data = as.data.frame(km_data_2$centers), aes(x = km_data_2$cent$
++   labs(title = "Scatter Plot of Clusters and Centroids", x = colnames(X)[1],$
++   theme(text = element_text(size = 15), aspect.ratio = 1)
+> 
+> dev.off()
+null device 
+          1
+> library(ggplot2)
+> 
+> png(paste0('D:/Projects/EM-algorithm/plots/em-mgmm-plot-mall-customers-examp$
+> 
+> options(repr.plot.width = 5, repr.plot.height =5)
+> # Scatter plot of clusters
+> ggplot(data = X, aes(x = X[,2], y = X[,3], color = as.factor(c(results$clust$
++   geom_point(size = 3) +
++   geom_point(data = as.data.frame(results$mu), aes(x = results$mu[,2], y = r$
++   labs(title = "Scatter Plot of Clusters and Centroids", x = colnames(X)[2],$
++   theme(text = element_text(size = 15), aspect.ratio = 1)
+Error in `geom_point()`:
+! Problem while computing aesthetics.
+ℹ Error occurred in the 1st layer.
+Caused by error in `check_aesthetics()`:
+! Aesthetics must be either length 1 or the same as the data (200)
+✖ Fix the following mappings: `colour`
+Run `rlang::last_trace()` to see where the error occurred.
+> 
+> dev.off()
+null device 
+          1
+> library(ggplot2)
+> 
+> png(paste0('D:/Projects/EM-algorithm/plots/em-mgmm-plot-mall-customers-examp$
+> 
+> options(repr.plot.width = 5, repr.plot.height =5)
+> # Scatter plot of clusters
+> ggplot(data = X, aes(x = X[,2], y = X[,3], color = as.factor(c(results$clust$
++   geom_point(size = 3) +
++   geom_point(data = as.data.frame(results$mu), aes(x = results$mu[,2], y = r$
++   labs(title = "Scatter Plot of Clusters and Centroids", x = colnames(X)[2],$
++   theme(text = element_text(size = 15), aspect.ratio = 1)
+Error in `geom_point()`:
+! Problem while computing aesthetics.
+ℹ Error occurred in the 1st layer.
+Caused by error in `check_aesthetics()`:
+! Aesthetics must be either length 1 or the same as the data (200)
+✖ Fix the following mappings: `colour`
+Run `rlang::last_trace()` to see where the error occurred.
+> 
+> dev.off()
+null device 
+          1
+> library(ggplot2)
+>
+> png(paste0('D:/Projects/EM-algorithm/plots/em-mgmm-plot-mall-customers-examp$
+> 
+> options(repr.plot.width = 5, repr.plot.height =5)
+> # Scatter plot of clusters
+> ggplot(data = X, aes(x = X[,2], y = X[,3], color = as.factor(c(results$clust$
++   geom_point(size = 3) +
++   geom_point(data = as.data.frame(results$mu), aes(x = results$mu[,2], y = r$
++   labs(title = "Scatter Plot of Clusters and Centroids", x = colnames(X)[2],$
++   theme(text = element_text(size = 15), aspect.ratio = 1)
+> 
+> dev.off()
+null device 
+          1
+> png(paste0('D:/Projects/EM-algorithm/plots/em-mgmm-plot-mall-customers-examp$
+> 
+> options(repr.plot.width = 5, repr.plot.height =5)
+> # Scatter plot of clusters
+> ggplot(data = X, aes(x = X[,1], y = X[,3], color = as.factor(c(results$clust$
++   geom_point(size = 3) +
++   geom_point(data = as.data.frame(results$mu), aes(x = results$mu[,1], y = r$
++   labs(title = "Scatter Plot of Clusters and Centroids", x = colnames(X)[1],$
++   theme(text = element_text(size = 15), aspect.ratio = 1)
+> 
+> dev.off()
+null device 
+          1
+> png(paste0('D:/Projects/EM-algorithm/plots/em-mgmm-plot-mall-customers-examp$
+> 
+> options(repr.plot.width = 5, repr.plot.height =5)
+> # Scatter plot of clusters
+> ggplot(data = X, aes(x = X[,1], y = X[,2], color = as.factor(c(results$clust$
++   geom_point(size = 3) +
++   geom_point(data = as.data.frame(results$mu), aes(x = results$mu[,1], y = r$
++   labs(title = "Scatter Plot of Clusters and Centroids", x = colnames(X)[1],$
++   theme(text = element_text(size = 15), aspect.ratio = 1)
+> 
+> dev.off()
+null device 
+          1
+> library(ggplot2)
+>
+> png(paste0('D:/Projects/EM-algorithm/plots/em-mgmm-plot-iris-example-', coln$
+> 
+> options(repr.plot.width = 5, repr.plot.height =5)
+> # Scatter plot of clusters
+> ggplot(data = iris, aes(x = iris2$SepalLengthCm, y = iris2$SepalWidthCm, col$
++   geom_point(size = 3) +
++   geom_point(data = as.data.frame(test$mu), aes(x = test$mu[,1], y = test$mu$
++   labs(title = "Scatter Plot of Clusters and Centroids", x = colnames(iris2)$
++   theme(text = element_text(size = 15), aspect.ratio = 1)
+> 
+> dev.off()
+null device 
+          1
+> library(plyr)
+> 
+> # Create starting values
+> Mu = daply(iris2, NULL, function(x) colMeans(x)) + runif(4, 0, 0.5)
+> Cov = dlply(iris2, NULL, function(x) var(x) + diag(runif(4, 0, 0.5)))
+> 
+> column.names <- colnames(iris2)
+> row.names <- c("Cluster 1", "Cluster 2", "Cluster 3")
+> 
+> # Create list of starting values
+> initMu = array(c(Mu[1] + 0.1, Mu[1] + 0.2, Mu[1] + 0.3, Mu[2] + 0.1, Mu[2] +$
+> initCov <- list('Cluster 1' = Cov[[1]], 'Cluster 2' = Cov[[1]], 'Cluster 3' $
+> initProbs = c(.1, .2, .7)
+> 
+> initParams = list(mu=initMu, var=initCov, probs=initProbs)  
+> 
+> print(initParams)
+$mu
+          SepalLengthCm SepalWidthCm PetalLengthCm PetalWidthCm
+Cluster 1      6.183133     3.542076      4.154272     1.495737
+Cluster 2      6.283133     3.642076      4.254272     1.595737
+Cluster 3      6.383133     3.742076      4.354272     1.795737
+
+$var
+$var$`Cluster 1`
+              SepalLengthCm SepalWidthCm PetalLengthCm PetalWidthCm
+SepalLengthCm    0.86101208  -0.03926846     1.2736823    0.5169038
+SepalWidthCm    -0.03926846   0.23143537    -0.3217128   -0.1179812
+PetalLengthCm    1.27368233  -0.32171275     3.4858203    1.2963875
+PetalWidthCm     0.51690380  -0.11798121     1.2963875    0.9405235
+
+$var$`Cluster 2`
+              SepalLengthCm SepalWidthCm PetalLengthCm PetalWidthCm
+SepalLengthCm    0.86101208  -0.03926846     1.2736823    0.5169038
+SepalWidthCm    -0.03926846   0.23143537    -0.3217128   -0.1179812
+PetalLengthCm    1.27368233  -0.32171275     3.4858203    1.2963875
+PetalWidthCm     0.51690380  -0.11798121     1.2963875    0.9405235
+
+$var$`Cluster 3`
+              SepalLengthCm SepalWidthCm PetalLengthCm PetalWidthCm
+SepalLengthCm    0.86101208  -0.03926846     1.2736823    0.5169038
+SepalWidthCm    -0.03926846   0.23143537    -0.3217128   -0.1179812
+PetalLengthCm    1.27368233  -0.32171275     3.4858203    1.2963875
+PetalWidthCm     0.51690380  -0.11798121     1.2963875    0.9405235
+
+
+$probs
+[1] 0.1 0.2 0.7
+
+> 
+> # Run and examine
+> test = gaussmixEM(params=initParams, X=as.matrix(iris2), clusters = 3, tol=1$
+Iterations of EM: 
+logLikelihood at iteration - 0...
+[1] 188.3105
+params at iteration - 0...
+[1] "paramsOld\n"
+[1] 0.0 0.1 0.2 0.7
+[1] "paramsCurrent\n"
+[1] 188.3105237   0.1902516   0.2564060   0.5533424
+logLikelihood at iteration - 1...
+[1] 187.0976
+params at iteration - 1...
+[1] "paramsOld\n"
+[1] 188.3105237   0.1902516   0.2564060   0.5533424
+[1] "paramsCurrent\n"
+[1] 187.0976241   0.1924180   0.2555925   0.5519895
+logLikelihood at iteration - 2...
+[1] 184.0722
+params at iteration - 2...
+[1] "paramsOld\n"
+[1] 187.0976241   0.1924180   0.2555925   0.5519895
+[1] "paramsCurrent\n"
+[1] 184.0721520   0.1991668   0.2541346   0.5466986
+logLikelihood at iteration - 3...
+[1] 178.3968
+params at iteration - 3...
+[1] "paramsOld\n"
+[1] 184.0721520   0.1991668   0.2541346   0.5466986
+[1] "paramsCurrent\n"
+[1] 178.3967969   0.2140271   0.2532839   0.5326890
+logLikelihood at iteration - 4...
+[1] 169.7497
+params at iteration - 4...
+[1] "paramsOld\n"
+[1] 178.3967969   0.2140271   0.2532839   0.5326890
+[1] "paramsCurrent\n"
+[1] 169.7496600   0.2364506   0.2543970   0.5091524
+logLikelihood at iteration - 5...
+[1] 157.753
+params at iteration - 5...
+[1] "paramsOld\n"
+[1] 169.7496600   0.2364506   0.2543970   0.5091524
+[1] "paramsCurrent\n"
+[1] 157.7529674   0.2630617   0.2552864   0.4816519
+logLikelihood at iteration - 6...
+[1] 141.3773
+params at iteration - 6...
+[1] "paramsOld\n"
+[1] 157.7529674   0.2630617   0.2552864   0.4816519
+[1] "paramsCurrent\n"
+[1] 141.3772532   0.2877343   0.2537999   0.4584657
+logLikelihood at iteration - 7...
+[1] 118.2206
+params at iteration - 7...
+[1] "paramsOld\n"
+[1] 141.3772532   0.2877343   0.2537999   0.4584657
+[1] "paramsCurrent\n"
+[1] 118.2206481   0.3057260   0.2458872   0.4483869
+logLikelihood at iteration - 8...
+[1] 101.9554
+params at iteration - 8...
+[1] "paramsOld\n"
+[1] 118.2206481   0.3057260   0.2458872   0.4483869
+[1] "paramsCurrent\n"
+[1] 101.9553942   0.3128050   0.2255317   0.4616633
+logLikelihood at iteration - 9...
+[1] 92.90062
+params at iteration - 9...
+[1] "paramsOld\n"
+[1] 101.9553942   0.3128050   0.2255317   0.4616633
+[1] "paramsCurrent\n"
+[1] 92.9006154  0.3204208  0.2106346  0.4689446
+logLikelihood at iteration - 10...
+[1] 84.47786
+params at iteration - 10...
+[1] "paramsOld\n"
+[1] 92.9006154  0.3204208  0.2106346  0.4689446
+[1] "paramsCurrent\n"
+[1] 84.4778562  0.3275921  0.1979229  0.4744850
+logLikelihood at iteration - 11...
+[1] 76.43277
+params at iteration - 11...
+[1] "paramsOld\n"
+[1] 84.4778562  0.3275921  0.1979229  0.4744850
+[1] "paramsCurrent\n"
+[1] 76.4327736  0.3320093  0.1863630  0.4816277
+logLikelihood at iteration - 12...
+[1] 67.67503
+params at iteration - 12...
+[1] "paramsOld\n"
+[1] 76.4327736  0.3320093  0.1863630  0.4816277
+[1] "paramsCurrent\n"
+[1] 67.6750303  0.3333634  0.1743232  0.4923134
+logLikelihood at iteration - 13...
+[1] 56.32671
+params at iteration - 13...
+[1] "paramsOld\n"
+[1] 67.6750303  0.3333634  0.1743232  0.4923134
+[1] "paramsCurrent\n"
+[1] 56.3267087  0.3314196  0.1653558  0.5032247
+logLikelihood at iteration - 14...
+[1] 32.75182
+params at iteration - 14...
+[1] "paramsOld\n"
+[1] 56.3267087  0.3314196  0.1653558  0.5032247
+[1] "paramsCurrent\n"
+[1] 32.7518234  0.3264201  0.1675209  0.5060590
+logLikelihood at iteration - 15...
+[1] 31.83206
+params at iteration - 15...
+[1] "paramsOld\n"
+[1] 32.7518234  0.3264201  0.1675209  0.5060590
+[1] "paramsCurrent\n"
+[1] 31.8320622  0.3274652  0.1749213  0.4976134
+logLikelihood at iteration - 16...
+[1] 31.35846
+params at iteration - 16...
+[1] "paramsOld\n"
+[1] 31.8320622  0.3274652  0.1749213  0.4976134
+[1] "paramsCurrent\n"
+[1] 31.3584572  0.3279679  0.1817774  0.4902547
+logLikelihood at iteration - 17...
+[1] 30.9803
+params at iteration - 17...
+[1] "paramsOld\n"
+[1] 31.3584572  0.3279679  0.1817774  0.4902547
+[1] "paramsCurrent\n"
+[1] 30.9803003  0.3284040  0.1883675  0.4832285
+logLikelihood at iteration - 18...
+[1] 30.62802
+params at iteration - 18...
+[1] "paramsOld\n"
+[1] 30.9803003  0.3284040  0.1883675  0.4832285
+[1] "paramsCurrent\n"
+[1] 30.6280167  0.3288543  0.1953098  0.4758358
+logLikelihood at iteration - 19...
+[1] 30.22542
+params at iteration - 19...
+[1] "paramsOld\n"
+[1] 30.6280167  0.3288543  0.1953098  0.4758358
+[1] "paramsCurrent\n"
+[1] 30.2254218  0.3293792  0.2030060  0.4676148
+logLikelihood at iteration - 20...
+[1] 29.71119
+params at iteration - 20...
+[1] "paramsOld\n"
+[1] 30.2254218  0.3293792  0.2030060  0.4676148
+[1] "paramsCurrent\n"
+[1] 29.7111916  0.3300396  0.2115773  0.4583831
+logLikelihood at iteration - 21...
+[1] 29.04878
+params at iteration - 21...
+[1] "paramsOld\n"
+[1] 29.7111916  0.3300396  0.2115773  0.4583831
+[1] "paramsCurrent\n"
+[1] 29.0487806  0.3308632  0.2208868  0.4482499
+logLikelihood at iteration - 22...
+[1] 28.24679
+params at iteration - 22...
+[1] "paramsOld\n"
+[1] 29.0487806  0.3308632  0.2208868  0.4482499
+[1] "paramsCurrent\n"
+[1] 28.2467896  0.3317460  0.2306540  0.4375999
+logLikelihood at iteration - 23...
+[1] 27.39886
+params at iteration - 23...
+[1] "paramsOld\n"
+[1] 28.2467896  0.3317460  0.2306540  0.4375999
+[1] "paramsCurrent\n"
+[1] 27.3988601  0.3324327  0.2405139  0.4270534
+logLikelihood at iteration - 24...
+[1] 26.63314
+params at iteration - 24...
+[1] "paramsOld\n"
+[1] 27.3988601  0.3324327  0.2405139  0.4270534
+[1] "paramsCurrent\n"
+[1] 26.6331429  0.3327947  0.2499211  0.4172842
+logLikelihood at iteration - 25...
+[1] 26.00602
+params at iteration - 25...
+[1] "paramsOld\n"
+[1] 26.6331429  0.3327947  0.2499211  0.4172842
+[1] "paramsCurrent\n"
+[1] 26.0060248  0.3329434  0.2583343  0.4087223
+logLikelihood at iteration - 26...
+[1] 25.51524
+params at iteration - 26...
+[1] "paramsOld\n"
+[1] 26.0060248  0.3329434  0.2583343  0.4087223
+[1] "paramsCurrent\n"
+[1] 25.5152371  0.3330048  0.2655409  0.4014543
+logLikelihood at iteration - 27...
+[1] 25.13919
+params at iteration - 27...
+[1] "paramsOld\n"
+[1] 25.5152371  0.3330048  0.2655409  0.4014543
+[1] "paramsCurrent\n"
+[1] 25.1391886  0.3330359  0.2716028  0.3953613
+logLikelihood at iteration - 28...
+[1] 24.85186
+params at iteration - 28...
+[1] "paramsOld\n"
+[1] 25.1391886  0.3330359  0.2716028  0.3953613
+[1] "paramsCurrent\n"
+[1] 24.8518625  0.3330555  0.2766834  0.3902611
+logLikelihood at iteration - 29...
+[1] 24.63045
+params at iteration - 29...
+[1] "paramsOld\n"
+[1] 24.8518625  0.3330555  0.2766834  0.3902611
+[1] "paramsCurrent\n"
+[1] 24.6304498  0.3330699  0.2809539  0.3859762
+logLikelihood at iteration - 30...
+[1] 24.45801
+params at iteration - 30...
+[1] "paramsOld\n"
+[1] 24.6304498  0.3330699  0.2809539  0.3859762
+[1] "paramsCurrent\n"
+[1] 24.4580115  0.3330812  0.2845627  0.3823561
+logLikelihood at iteration - 31...
+[1] 24.32265
+params at iteration - 31...
+[1] "paramsOld\n"
+[1] 24.4580115  0.3330812  0.2845627  0.3823561
+[1] "paramsCurrent\n"
+[1] 24.3226487  0.3330906  0.2876311  0.3792784
+logLikelihood at iteration - 32...
+[1] 24.21583
+params at iteration - 32...
+[1] "paramsOld\n"
+[1] 24.3226487  0.3330906  0.2876311  0.3792784
+[1] "paramsCurrent\n"
+[1] 24.2158317  0.3330985  0.2902570  0.3766445
+logLikelihood at iteration - 33...
+[1] 24.13116
+params at iteration - 33...
+[1] "paramsOld\n"
+[1] 24.2158317  0.3330985  0.2902570  0.3766445
+[1] "paramsCurrent\n"
+[1] 24.1311561  0.3331054  0.2925193  0.3743753
+logLikelihood at iteration - 34...
+[1] 24.06365
+params at iteration - 34...
+[1] "paramsOld\n"
+[1] 24.1311561  0.3331054  0.2925193  0.3743753
+[1] "paramsCurrent\n"
+[1] 24.0636462  0.3331114  0.2944814  0.3724071
+logLikelihood at iteration - 35...
+[1] 24.00939
+params at iteration - 35...
+[1] "paramsOld\n"
+[1] 24.0636462  0.3331114  0.2944814  0.3724071
+[1] "paramsCurrent\n"
+[1] 24.0093917  0.3331167  0.2961943  0.3706890
+logLikelihood at iteration - 36...
+[1] 23.96533
+params at iteration - 36...
+[1] "paramsOld\n"
+[1] 24.0093917  0.3331167  0.2961943  0.3706890
+[1] "paramsCurrent\n"
+[1] 23.9653339  0.3331213  0.2976989  0.3691798
+logLikelihood at iteration - 37...
+[1] 23.92911
+params at iteration - 37...
+[1] "paramsOld\n"
+[1] 23.9653339  0.3331213  0.2976989  0.3691798
+[1] "paramsCurrent\n"
+[1] 23.9291075  0.3331254  0.2990281  0.3678464
+logLikelihood at iteration - 38...
+[1] 23.89891
+params at iteration - 38...
+[1] "paramsOld\n"
+[1] 23.9291075  0.3331254  0.2990281  0.3678464
+[1] "paramsCurrent\n"
+[1] 23.8989061  0.3331291  0.3002086  0.3666623
+logLikelihood at iteration - 39...
+[1] 23.87337
+params at iteration - 39...
+[1] "paramsOld\n"
+[1] 23.8989061  0.3331291  0.3002086  0.3666623
+[1] "paramsCurrent\n"
+[1] 23.8733650  0.3331323  0.3012620  0.3656057
+logLikelihood at iteration - 40...
+[1] 23.85146
+params at iteration - 40...
+[1] "paramsOld\n"
+[1] 23.8733650  0.3331323  0.3012620  0.3656057
+[1] "paramsCurrent\n"
+[1] 23.8514608  0.3331352  0.3022059  0.3646589
+logLikelihood at iteration - 41...
+[1] 23.83243
+params at iteration - 41...
+[1] "paramsOld\n"
+[1] 23.8514608  0.3331352  0.3022059  0.3646589
+[1] "paramsCurrent\n"
+[1] 23.8324287  0.3331377  0.3030550  0.3638072
+logLikelihood at iteration - 42...
+[1] 23.8157
+params at iteration - 42...
+[1] "paramsOld\n"
+[1] 23.8324287  0.3331377  0.3030550  0.3638072
+[1] "paramsCurrent\n"
+[1] 23.8156973  0.3331400  0.3038213  0.3630387
+logLikelihood at iteration - 43...
+[1] 23.80084
+params at iteration - 43...
+[1] "paramsOld\n"
+[1] 23.8156973  0.3331400  0.3038213  0.3630387
+[1] "paramsCurrent\n"
+[1] 23.8008382  0.3331421  0.3045149  0.3623430
+logLikelihood at iteration - 44...
+[1] 23.78753
+params at iteration - 44...
+[1] "paramsOld\n"
+[1] 23.8008382  0.3331421  0.3045149  0.3623430
+[1] "paramsCurrent\n"
+[1] 23.7875279  0.3331440  0.3051443  0.3617117
+logLikelihood at iteration - 45...
+[1] 23.77552
+params at iteration - 45...
+[1] "paramsOld\n"
+[1] 23.7875279  0.3331440  0.3051443  0.3617117
+[1] "paramsCurrent\n"
+[1] 23.7755197  0.3331457  0.3057169  0.3611374
+logLikelihood at iteration - 46...
+[1] 23.76462
+params at iteration - 46...
+[1] "paramsOld\n"
+[1] 23.7755197  0.3331457  0.3057169  0.3611374
+[1] "paramsCurrent\n"
+[1] 23.7646232  0.3331472  0.3062388  0.3606140
+logLikelihood at iteration - 47...
+[1] 23.75469
+params at iteration - 47...
+[1] "paramsOld\n"
+[1] 23.7646232  0.3331472  0.3062388  0.3606140
+[1] "paramsCurrent\n"
+[1] 23.7546889  0.3331486  0.3067154  0.3601360
+logLikelihood at iteration - 48...
+[1] 23.7456
+params at iteration - 48...
+[1] "paramsOld\n"
+[1] 23.7546889  0.3331486  0.3067154  0.3601360
+[1] "paramsCurrent\n"
+[1] 23.7455978  0.3331499  0.3071514  0.3596988
+logLikelihood at iteration - 49...
+[1] 23.73725
+params at iteration - 49...
+[1] "paramsOld\n"
+[1] 23.7455978  0.3331499  0.3071514  0.3596988
+[1] "paramsCurrent\n"
+[1] 23.7372534  0.3331510  0.3075507  0.3592983
+logLikelihood at iteration - 50...
+[1] 23.72958
+params at iteration - 50...
+[1] "paramsOld\n"
+[1] 23.7372534  0.3331510  0.3075507  0.3592983
+[1] "paramsCurrent\n"
+[1] 23.729576  0.333152  0.307917  0.358931
+logLikelihood at iteration - 51...
+[1] 23.7225
+params at iteration - 51...
+[1] "paramsOld\n"
+[1] 23.729576  0.333152  0.307917  0.358931
+[1] "paramsCurrent\n"
+[1] 23.7224988  0.3331530  0.3082533  0.3585937
+logLikelihood at iteration - 52...
+[1] 23.71596
+params at iteration - 52...
+[1] "paramsOld\n"
+[1] 23.7224988  0.3331530  0.3082533  0.3585937
+[1] "paramsCurrent\n"
+[1] 23.7159650  0.3331539  0.3085625  0.3582836
+logLikelihood at iteration - 53...
+[1] 23.70993
+params at iteration - 53...
+[1] "paramsOld\n"
+[1] 23.7159650  0.3331539  0.3085625  0.3582836
+[1] "paramsCurrent\n"
+[1] 23.7099254  0.3331547  0.3088471  0.3579982
+logLikelihood at iteration - 54...
+[1] 23.70434
+params at iteration - 54...
+[1] "paramsOld\n"
+[1] 23.7099254  0.3331547  0.3088471  0.3579982
+[1] "paramsCurrent\n"
+[1] 23.7043372  0.3331554  0.3091092  0.3577354
+logLikelihood at iteration - 55...
+[1] 23.69916
+params at iteration - 55...
+[1] "paramsOld\n"
+[1] 23.7043372  0.3331554  0.3091092  0.3577354
+[1] "paramsCurrent\n"
+[1] 23.6991625  0.3331561  0.3093507  0.3574932
+logLikelihood at iteration - 56...
+[1] 23.69437
+params at iteration - 56...
+[1] "paramsOld\n"
+[1] 23.6991625  0.3331561  0.3093507  0.3574932
+[1] "paramsCurrent\n"
+[1] 23.6943676  0.3331567  0.3095736  0.3572697
+logLikelihood at iteration - 57...
+[1] 23.68992
+params at iteration - 57...
+[1] "paramsOld\n"
+[1] 23.6943676  0.3331567  0.3095736  0.3572697
+[1] "paramsCurrent\n"
+[1] 23.6899220  0.3331573  0.3097793  0.3570634
+logLikelihood at iteration - 58...
+[1] 23.6858
+params at iteration - 58...
+[1] "paramsOld\n"
+[1] 23.6899220  0.3331573  0.3097793  0.3570634
+[1] "paramsCurrent\n"
+[1] 23.6857986  0.3331578  0.3099693  0.3568729
+logLikelihood at iteration - 59...
+[1] 23.68197
+params at iteration - 59...
+[1] "paramsOld\n"
+[1] 23.6857986  0.3331578  0.3099693  0.3568729
+[1] "paramsCurrent\n"
+[1] 23.6819725  0.3331583  0.3101449  0.3566968
+logLikelihood at iteration - 60...
+[1] 23.67842
+params at iteration - 60...
+[1] "paramsOld\n"
+[1] 23.6819725  0.3331583  0.3101449  0.3566968
+[1] "paramsCurrent\n"
+[1] 23.6784212  0.3331588  0.3103072  0.3565340
+logLikelihood at iteration - 61...
+[1] 23.67512
+params at iteration - 61...
+[1] "paramsOld\n"
+[1] 23.6784212  0.3331588  0.3103072  0.3565340
+[1] "paramsCurrent\n"
+[1] 23.6751239  0.3331592  0.3104574  0.3563834
+logLikelihood at iteration - 62...
+[1] 23.67206
+params at iteration - 62...
+[1] "paramsOld\n"
+[1] 23.6751239  0.3331592  0.3104574  0.3563834
+[1] "paramsCurrent\n"
+[1] 23.6720618  0.3331595  0.3105965  0.3562440
+logLikelihood at iteration - 63...
+[1] 23.66922
+params at iteration - 63...
+[1] "paramsOld\n"
+[1] 23.6720618  0.3331595  0.3105965  0.3562440
+[1] "paramsCurrent\n"
+[1] 23.6692175  0.3331599  0.3107252  0.3561149
+logLikelihood at iteration - 64...
+[1] 23.66658
+params at iteration - 64...
+[1] "paramsOld\n"
+[1] 23.6692175  0.3331599  0.3107252  0.3561149
+[1] "paramsCurrent\n"
+[1] 23.6665751  0.3331602  0.3108444  0.3559954
+logLikelihood at iteration - 65...
+[1] 23.66412
+params at iteration - 65...
+[1] "paramsOld\n"
+[1] 23.6665751  0.3331602  0.3108444  0.3559954
+[1] "paramsCurrent\n"
+[1] 23.6641199  0.3331605  0.3109548  0.3558846
+logLikelihood at iteration - 66...
+[1] 23.66184
+params at iteration - 66...
+[1] "paramsOld\n"
+[1] 23.6641199  0.3331605  0.3109548  0.3558846
+[1] "paramsCurrent\n"
+[1] 23.6618382  0.3331608  0.3110572  0.3557820
+logLikelihood at iteration - 67...
+[1] 23.65972
+params at iteration - 67...
+[1] "paramsOld\n"
+[1] 23.6618382  0.3331608  0.3110572  0.3557820
+[1] "paramsCurrent\n"
+[1] 23.6597176  0.3331611  0.3111521  0.3556868
+logLikelihood at iteration - 68...
+[1] 23.65775
+params at iteration - 68...
+[1] "paramsOld\n"
+[1] 23.6597176  0.3331611  0.3111521  0.3556868
+[1] "paramsCurrent\n"
+[1] 23.6577464  0.3331613  0.3112402  0.3555985
+logLikelihood at iteration - 69...
+[1] 23.65591
+params at iteration - 69...
+[1] "paramsOld\n"
+[1] 23.6577464  0.3331613  0.3112402  0.3555985
+[1] "paramsCurrent\n"
+[1] 23.6559139  0.3331615  0.3113218  0.3555167
+logLikelihood at iteration - 70...
+[1] 23.65421
+params at iteration - 70...
+[1] "paramsOld\n"
+[1] 23.6559139  0.3331615  0.3113218  0.3555167
+[1] "paramsCurrent\n"
+[1] 23.6542103  0.3331617  0.3113976  0.3554407
+logLikelihood at iteration - 71...
+[1] 23.65263
+params at iteration - 71...
+[1] "paramsOld\n"
+[1] 23.6542103  0.3331617  0.3113976  0.3554407
+[1] "paramsCurrent\n"
+[1] 23.6526263  0.3331619  0.3114679  0.3553702
+logLikelihood at iteration - 72...
+[1] 23.65115
+params at iteration - 72...
+[1] "paramsOld\n"
+[1] 23.6526263  0.3331619  0.3114679  0.3553702
+[1] "paramsCurrent\n"
+[1] 23.6511535  0.3331621  0.3115331  0.3553048
+logLikelihood at iteration - 73...
+[1] 23.64978
+params at iteration - 73...
+[1] "paramsOld\n"
+[1] 23.6511535  0.3331621  0.3115331  0.3553048
+[1] "paramsCurrent\n"
+[1] 23.6497838  0.3331623  0.3115937  0.3552440
+logLikelihood at iteration - 74...
+[1] 23.64851
+params at iteration - 74...
+[1] "paramsOld\n"
+[1] 23.6497838  0.3331623  0.3115937  0.3552440
+[1] "paramsCurrent\n"
+[1] 23.6485101  0.3331624  0.3116500  0.3551876
+logLikelihood at iteration - 75...
+[1] 23.64733
+params at iteration - 75...
+[1] "paramsOld\n"
+[1] 23.6485101  0.3331624  0.3116500  0.3551876
+[1] "paramsCurrent\n"
+[1] 23.6473256  0.3331626  0.3117022  0.3551352
+logLikelihood at iteration - 76...
+[1] 23.64622
+params at iteration - 76...
+[1] "paramsOld\n"
+[1] 23.6473256  0.3331626  0.3117022  0.3551352
+[1] "paramsCurrent\n"
+[1] 23.6462239  0.3331627  0.3117507  0.3550866
+logLikelihood at iteration - 77...
+[1] 23.6452
+params at iteration - 77...
+[1] "paramsOld\n"
+[1] 23.6462239  0.3331627  0.3117507  0.3550866
+[1] "paramsCurrent\n"
+[1] 23.6451992  0.3331628  0.3117958  0.3550414
+logLikelihood at iteration - 78...
+[1] 23.64425
+params at iteration - 78...
+[1] "paramsOld\n"
+[1] 23.6451992  0.3331628  0.3117958  0.3550414
+[1] "paramsCurrent\n"
+[1] 23.6442460  0.3331629  0.3118377  0.3549994
+logLikelihood at iteration - 79...
+[1] 23.64336
+params at iteration - 79...
+[1] "paramsOld\n"
+[1] 23.6442460  0.3331629  0.3118377  0.3549994
+[1] "paramsCurrent\n"
+[1] 23.6433595  0.3331630  0.3118766  0.3549604
+logLikelihood at iteration - 80...
+[1] 23.64253
+params at iteration - 80...
+[1] "paramsOld\n"
+[1] 23.6433595  0.3331630  0.3118766  0.3549604
+[1] "paramsCurrent\n"
+[1] 23.6425348  0.3331631  0.3119128  0.3549241
+logLikelihood at iteration - 81...
+[1] 23.64177
+params at iteration - 81...
+[1] "paramsOld\n"
+[1] 23.6425348  0.3331631  0.3119128  0.3549241
+[1] "paramsCurrent\n"
+[1] 23.6417676  0.3331632  0.3119464  0.3548904
+logLikelihood at iteration - 82...
+[1] 23.64105
+params at iteration - 82...
+[1] "paramsOld\n"
+[1] 23.6417676  0.3331632  0.3119464  0.3548904
+[1] "paramsCurrent\n"
+[1] 23.6410539  0.3331633  0.3119776  0.3548591
+logLikelihood at iteration - 83...
+[1] 23.64039
+params at iteration - 83...
+[1] "paramsOld\n"
+[1] 23.6410539  0.3331633  0.3119776  0.3548591
+[1] "paramsCurrent\n"
+[1] 23.6403899  0.3331634  0.3120067  0.3548300
+logLikelihood at iteration - 84...
+[1] 23.63977
+params at iteration - 84...
+[1] "paramsOld\n"
+[1] 23.6403899  0.3331634  0.3120067  0.3548300
+[1] "paramsCurrent\n"
+[1] 23.6397723  0.3331634  0.3120337  0.3548029
+logLikelihood at iteration - 85...
+[1] 23.6392
+params at iteration - 85...
+[1] "paramsOld\n"
+[1] 23.6397723  0.3331634  0.3120337  0.3548029
+[1] "paramsCurrent\n"
+[1] 23.6391976  0.3331635  0.3120588  0.3547777
+logLikelihood at iteration - 86...
+[1] 23.63866
+params at iteration - 86...
+[1] "paramsOld\n"
+[1] 23.6391976  0.3331635  0.3120588  0.3547777
+[1] "paramsCurrent\n"
+[1] 23.6386630  0.3331636  0.3120821  0.3547543
+logLikelihood at iteration - 87...
+[1] 23.63817
+params at iteration - 87...
+[1] "paramsOld\n"
+[1] 23.6386630  0.3331636  0.3120821  0.3547543
+[1] "paramsCurrent\n"
+[1] 23.6381655  0.3331636  0.3121038  0.3547326
+logLikelihood at iteration - 88...
+[1] 23.6377
+params at iteration - 88...
+[1] "paramsOld\n"
+[1] 23.6381655  0.3331636  0.3121038  0.3547326
+[1] "paramsCurrent\n"
+[1] 23.6377027  0.3331637  0.3121240  0.3547123
+logLikelihood at iteration - 89...
+[1] 23.63727
+params at iteration - 89...
+[1] "paramsOld\n"
+[1] 23.6377027  0.3331637  0.3121240  0.3547123
+[1] "paramsCurrent\n"
+[1] 23.6372721  0.3331637  0.3121427  0.3546935
+logLikelihood at iteration - 90...
+[1] 23.63687
+params at iteration - 90...
+[1] "paramsOld\n"
+[1] 23.6372721  0.3331637  0.3121427  0.3546935
+[1] "paramsCurrent\n"
+[1] 23.6368715  0.3331638  0.3121602  0.3546760
+logLikelihood at iteration - 91...
+[1] 23.6365
+params at iteration - 91...
+[1] "paramsOld\n"
+[1] 23.6368715  0.3331638  0.3121602  0.3546760
+[1] "paramsCurrent\n"
+[1] 23.6364987  0.3331638  0.3121764  0.3546598
+logLikelihood at iteration - 92...
+[1] 23.63615
+params at iteration - 92...
+[1] "paramsOld\n"
+[1] 23.6364987  0.3331638  0.3121764  0.3546598
+[1] "paramsCurrent\n"
+[1] 23.6361518  0.3331639  0.3121915  0.3546446
+logLikelihood at iteration - 93...
+[1] 23.63583
+params at iteration - 93...
+[1] "paramsOld\n"
+[1] 23.6361518  0.3331639  0.3121915  0.3546446
+[1] "paramsCurrent\n"
+[1] 23.6358291  0.3331639  0.3122055  0.3546306
+logLikelihood at iteration - 94...
+[1] 23.63553
+params at iteration - 94...
+[1] "paramsOld\n"
+[1] 23.6358291  0.3331639  0.3122055  0.3546306
+[1] "paramsCurrent\n"
+[1] 23.6355288  0.3331639  0.3122186  0.3546175
+logLikelihood at iteration - 95...
+[1] 23.63525
+params at iteration - 95...
+[1] "paramsOld\n"
+[1] 23.6355288  0.3331639  0.3122186  0.3546175
+[1] "paramsCurrent\n"
+[1] 23.6352493  0.3331640  0.3122307  0.3546053
+logLikelihood at iteration - 96...
+[1] 23.63499
+params at iteration - 96...
+[1] "paramsOld\n"
+[1] 23.6352493  0.3331640  0.3122307  0.3546053
+[1] "paramsCurrent\n"
+[1] 23.634989  0.333164  0.312242  0.354594
+logLikelihood at iteration - 97...
+[1] 23.63475
+params at iteration - 97...
+[1] "paramsOld\n"
+[1] 23.634989  0.333164  0.312242  0.354594
+[1] "paramsCurrent\n"
+[1] 23.6347474  0.3331640  0.3122525  0.3545834
+logLikelihood at iteration - 98...
+[1] 23.63452
+params at iteration - 98...
+[1] "paramsOld\n"
+[1] 23.6347474  0.3331640  0.3122525  0.3545834
+[1] "paramsCurrent\n"
+[1] 23.6345222  0.3331641  0.3122623  0.3545736
+logLikelihood at iteration - 99...
+[1] 23.63431
+params at iteration - 99...
+[1] "paramsOld\n"
+[1] 23.6345222  0.3331641  0.3122623  0.3545736
+[1] "paramsCurrent\n"
+[1] 23.6343127  0.3331641  0.3122714  0.3545645
+logLikelihood at iteration - 100...
+[1] 23.63412
+params at iteration - 100...
+[1] "paramsOld\n"
+[1] 23.6343127  0.3331641  0.3122714  0.3545645
+[1] "paramsCurrent\n"
+[1] 23.6341178  0.3331641  0.3122799  0.3545560
+logLikelihood at iteration - 101...
+[1] 23.63394
+params at iteration - 101...
+[1] "paramsOld\n"
+[1] 23.6341178  0.3331641  0.3122799  0.3545560
+[1] "paramsCurrent\n"
+[1] 23.6339364  0.3331641  0.3122878  0.3545481
+logLikelihood at iteration - 102...
+[1] 23.63377
+params at iteration - 102...
+[1] "paramsOld\n"
+[1] 23.6339364  0.3331641  0.3122878  0.3545481
+[1] "paramsCurrent\n"
+[1] 23.6337675  0.3331641  0.3122951  0.3545408
+logLikelihood at iteration - 103...
+[1] 23.63361
+params at iteration - 103...
+[1] "paramsOld\n"
+[1] 23.6337675  0.3331641  0.3122951  0.3545408
+[1] "paramsCurrent\n"
+[1] 23.6336105  0.3331642  0.3123019  0.3545339
+logLikelihood at iteration - 104...
+[1] 23.63346
+params at iteration - 104...
+[1] "paramsOld\n"
+[1] 23.6336105  0.3331642  0.3123019  0.3545339
+[1] "paramsCurrent\n"
+[1] 23.6334643  0.3331642  0.3123082  0.3545276
+logLikelihood at iteration - 105...
+[1] 23.63333
+params at iteration - 105...
+[1] "paramsOld\n"
+[1] 23.6334643  0.3331642  0.3123082  0.3545276
+[1] "paramsCurrent\n"
+[1] 23.6333282  0.3331642  0.3123141  0.3545217
+logLikelihood at iteration - 106...
+[1] 23.6332
+params at iteration - 106...
+[1] "paramsOld\n"
+[1] 23.6333282  0.3331642  0.3123141  0.3545217
+[1] "paramsCurrent\n"
+[1] 23.6332017  0.3331642  0.3123196  0.3545162
+logLikelihood at iteration - 107...
+[1] 23.63308
+params at iteration - 107...
+[1] "paramsOld\n"
+[1] 23.6332017  0.3331642  0.3123196  0.3545162
+[1] "paramsCurrent\n"
+[1] 23.6330839  0.3331642  0.3123247  0.3545110
+logLikelihood at iteration - 108...
+[1] 23.63297
+params at iteration - 108...
+[1] "paramsOld\n"
+[1] 23.6330839  0.3331642  0.3123247  0.3545110
+[1] "paramsCurrent\n"
+[1] 23.6329742  0.3331642  0.3123295  0.3545063
+logLikelihood at iteration - 109...
+[1] 23.63287
+params at iteration - 109...
+[1] "paramsOld\n"
+[1] 23.6329742  0.3331642  0.3123295  0.3545063
+[1] "paramsCurrent\n"
+[1] 23.6328722  0.3331643  0.3123339  0.3545018
+logLikelihood at iteration - 110...
+[1] 23.63278
+params at iteration - 110...
+[1] "paramsOld\n"
+[1] 23.6328722  0.3331643  0.3123339  0.3545018
+[1] "paramsCurrent\n"
+[1] 23.6327773  0.3331643  0.3123380  0.3544977
+logLikelihood at iteration - 111...
+[1] 23.63269
+params at iteration - 111...
+[1] "paramsOld\n"
+[1] 23.6327773  0.3331643  0.3123380  0.3544977
+[1] "paramsCurrent\n"
+[1] 23.6326889  0.3331643  0.3123418  0.3544939
+logLikelihood at iteration - 112...
+[1] 23.63261
+params at iteration - 112...
+[1] "paramsOld\n"
+[1] 23.6326889  0.3331643  0.3123418  0.3544939
+[1] "paramsCurrent\n"
+[1] 23.6326067  0.3331643  0.3123454  0.3544903
+> 
+> print(test)
+$probs
+[1] 0.3331643 0.3123454 0.3544903
+
+$mu
+          SepalLengthCm SepalWidthCm PetalLengthCm PetalWidthCm
+Cluster 1      5.006255     3.418564      1.464082    0.2439708
+Cluster 2      6.294756     2.777968      4.679893    1.4488715
+Cluster 3      6.232300     2.954583      5.103507    1.8754700
+
+$var
+$var$`Cluster 1`
+     SepalLengthCm SepalWidthCm PetalLengthCm PetalWidthCm
+[1,]    0.12169653   0.09805640   0.015782118  0.010355516
+[2,]    0.09805640   0.14171745   0.011361293  0.011245253
+[3,]    0.01578212   0.01136129   0.029505302  0.005591314
+[4,]    0.01035552   0.01124525   0.005591314  0.011267833
+
+$var$`Cluster 2`
+     SepalLengthCm SepalWidthCm PetalLengthCm PetalWidthCm
+[1,]     0.6156529   0.18588306     0.7248909   0.22542929
+[2,]     0.1858831   0.14380423     0.1909600   0.06992843
+[3,]     0.7248909   0.19095995     1.0027056   0.31452551
+[4,]     0.2254293   0.06992843     0.3145255   0.10900493
+
+$var$`Cluster 3`
+     SepalLengthCm SepalWidthCm PetalLengthCm PetalWidthCm
+[1,]     0.2751833   0.06929520    0.22078729   0.12622708
+[2,]     0.0692952   0.06498524    0.06353287   0.05246445
+[3,]     0.2207873   0.06353287    0.30762878   0.17815237
+[4,]     0.1262271   0.05246445    0.17815237   0.15553971
+
+
+$resp
+                [,1]         [,2]         [,3]
+  [1,]  1.000000e+00 1.485719e-10 3.893596e-20
+  [2,]  9.999998e-01 1.928548e-07 8.536671e-16
+  [3,]  9.999999e-01 5.154031e-08 2.652668e-17
+  [4,]  9.999999e-01 1.022904e-07 2.191657e-14
+  [5,]  1.000000e+00 6.481429e-11 1.269455e-20
+  [6,]  1.000000e+00 1.937146e-10 9.197788e-22
+  [7,]  9.999998e-01 1.599134e-07 2.769246e-17
+  [8,]  1.000000e+00 6.388700e-10 6.160417e-18
+  [9,]  9.999971e-01 2.941818e-06 1.495149e-13
+ [10,]  1.000000e+00 2.219593e-09 6.781873e-15
+ [11,]  1.000000e+00 2.777752e-12 6.355245e-22
+ [12,]  1.000000e+00 1.052755e-09 4.638459e-16
+ [13,]  1.000000e+00 1.451892e-08 4.964831e-15
+ [14,]  9.999986e-01 1.432969e-06 1.714826e-15
+ [15,]  1.000000e+00 1.296056e-14 3.330068e-29
+ [16,]  1.000000e+00 1.409842e-14 2.299708e-31
+ [17,]  1.000000e+00 4.878417e-11 6.002040e-26
+ [18,]  1.000000e+00 2.586061e-09 2.811987e-20
+ [19,]  1.000000e+00 1.197747e-11 1.507794e-21
+ [20,]  1.000000e+00 6.469848e-11 5.306710e-22
+ [21,]  1.000000e+00 5.223507e-10 1.609686e-16
+ [22,]  1.000000e+00 5.392038e-09 7.710389e-21
+ [23,]  9.999999e-01 5.314879e-08 1.792212e-21
+ [24,]  9.999482e-01 5.178268e-05 1.329786e-14
+ [25,]  1.000000e+00 1.640947e-09 4.373619e-12
+ [26,]  9.999998e-01 1.930933e-07 7.866915e-14
+ [27,]  9.999995e-01 4.611273e-07 8.766432e-17
+ [28,]  1.000000e+00 8.944642e-11 2.030000e-19
+ [29,]  1.000000e+00 4.018759e-10 1.432236e-19
+ [30,]  1.000000e+00 1.858967e-08 2.824877e-14
+ [31,]  9.999999e-01 5.651818e-08 5.511226e-14
+ [32,]  1.000000e+00 4.362278e-08 4.829643e-19
+ [33,]  1.000000e+00 6.672796e-16 5.967264e-25
+ [34,]  1.000000e+00 1.771419e-15 5.686030e-29
+ [35,]  1.000000e+00 2.219593e-09 6.781873e-15
+ [36,]  1.000000e+00 2.266790e-08 3.526449e-19
+ [37,]  1.000000e+00 4.609178e-11 4.170059e-22
+ [38,]  1.000000e+00 2.219593e-09 6.781873e-15
+ [39,]  9.999981e-01 1.905239e-06 6.925118e-15
+ [40,]  1.000000e+00 4.785747e-10 2.962800e-18
+ [41,]  1.000000e+00 5.611135e-09 8.608216e-21
+ [42,]  9.747972e-01 2.520281e-02 7.918965e-13
+ [43,]  9.999997e-01 2.723732e-07 7.277661e-16
+ [44,]  9.999088e-01 9.121923e-05 4.174490e-16
+ [45,]  1.000000e+00 1.443385e-08 8.062156e-17
+ [46,]  9.999962e-01 3.841670e-06 1.191045e-15
+ [47,]  1.000000e+00 1.753457e-12 9.433362e-21
+ [48,]  1.000000e+00 4.746711e-08 5.690210e-16
+ [49,]  1.000000e+00 3.805412e-12 1.247733e-21
+ [50,]  1.000000e+00 2.909243e-09 3.533961e-18
+ [51,]  3.960105e-94 9.588085e-01 4.119152e-02
+ [52,]  2.430909e-85 8.331260e-01 1.668740e-01
+ [53,] 7.031805e-107 9.181974e-01 8.180260e-02
+ [54,]  5.262406e-66 9.585098e-01 4.149024e-02
+ [55,]  8.512136e-95 8.101240e-01 1.898760e-01
+ [56,]  1.164747e-80 1.471556e-01 8.528444e-01
+ [57,]  1.452522e-95 6.010444e-01 3.989556e-01
+ [58,]  8.787874e-35 9.850574e-01 1.494262e-02
+ [59,]  3.782082e-88 8.757210e-01 1.242790e-01
+ [60,]  1.634654e-61 3.227123e-01 6.772877e-01
+ [61,]  1.877855e-43 9.981427e-01 1.857340e-03
+ [62,]  5.657496e-74 4.802148e-01 5.197852e-01
+ [63,]  5.921161e-62 9.810489e-01 1.895105e-02
+ [64,]  1.614910e-92 4.806206e-01 5.193794e-01
+ [65,]  5.837297e-48 9.512853e-01 4.871467e-02
+ [66,]  6.150975e-81 9.427836e-01 5.721637e-02
+ [67,]  3.283610e-85 8.893121e-02 9.110688e-01
+ [68,]  7.706842e-59 1.349896e-01 8.650104e-01
+ [69,]  9.576617e-96 9.640612e-01 3.593884e-02
+ [70,]  1.220141e-55 9.047036e-01 9.529640e-02
+ [71,] 1.653976e-108 5.759689e-03 9.942403e-01
+ [72,]  1.613896e-63 9.495830e-01 5.041704e-02
+ [73,] 1.593087e-110 8.837429e-01 1.162571e-01
+ [74,]  9.029893e-88 7.653619e-02 9.234638e-01
+ [75,]  6.392101e-75 9.303814e-01 6.961858e-02
+ [76,]  1.303129e-81 9.232318e-01 7.676823e-02
+ [77,] 1.364297e-102 9.225077e-01 7.749234e-02
+ [78,] 2.381652e-118 4.773655e-01 5.226345e-01
+ [79,]  4.356717e-87 4.833962e-01 5.166038e-01
+ [80,]  1.179088e-40 9.920614e-01 7.938631e-03
+ [81,]  4.731778e-53 9.645436e-01 3.545644e-02
+ [82,]  1.985858e-47 9.563108e-01 4.368918e-02
+ [83,]  3.284682e-57 9.479085e-01 5.209147e-02
+ [84,] 2.960263e-119 2.488401e-01 7.511599e-01
+ [85,]  3.834745e-85 2.262185e-02 9.773781e-01
+ [86,]  2.766223e-85 4.227289e-01 5.772711e-01
+ [87,]  1.363484e-96 8.816070e-01 1.183930e-01
+ [88,]  1.584435e-85 9.872038e-01 1.279617e-02
+ [89,]  2.692084e-63 5.589672e-01 4.410328e-01
+ [90,]  3.966381e-64 8.665178e-01 1.334822e-01
+ [91,]  4.546837e-75 6.727139e-02 9.327286e-01
+ [92,]  3.436773e-87 5.639410e-01 4.360590e-01
+ [93,]  1.427384e-61 9.332169e-01 6.678309e-02
+ [94,]  8.138145e-36 9.959186e-01 4.081398e-03
+ [95,]  1.088854e-69 5.708148e-01 4.291852e-01
+ [96,]  3.695589e-64 3.066172e-01 6.933828e-01
+ [97,]  4.335579e-68 5.616288e-01 4.383712e-01
+ [98,]  7.461986e-74 8.800183e-01 1.199817e-01
+ [99,]  1.070833e-29 9.992459e-01 7.540820e-04
+[100,]  1.778794e-65 7.518377e-01 2.481623e-01
+[101,] 1.371770e-207 9.035108e-10 1.000000e+00
+[102,] 1.273446e-131 9.817067e-04 9.990183e-01
+[103,] 2.013790e-185 6.461514e-02 9.353849e-01
+[104,] 1.680945e-151 2.118083e-01 7.881917e-01
+[105,] 4.933308e-182 1.375378e-04 9.998625e-01
+[106,] 5.326339e-234 9.972854e-01 2.714640e-03
+[107,]  5.355442e-97 3.558971e-04 9.996441e-01
+[108,] 3.258584e-200 9.957853e-01 4.214659e-03
+[109,] 1.125510e-170 9.629211e-01 3.707895e-02
+[110,] 7.052257e-212 2.444914e-07 9.999998e-01
+[111,] 3.439652e-133 3.690641e-04 9.996309e-01
+[112,] 2.009432e-143 3.119506e-02 9.688049e-01
+[113,] 4.410959e-162 3.904878e-04 9.996095e-01
+[114,] 1.477436e-133 1.971275e-05 9.999803e-01
+[115,] 7.092824e-160 6.659369e-15 1.000000e+00
+[116,] 1.299268e-159 1.206047e-09 1.000000e+00
+[117,] 4.538688e-146 3.582663e-01 6.417337e-01
+[118,] 7.692769e-233 9.996265e-01 3.734734e-04
+[119,] 7.234292e-272 9.975445e-01 2.455497e-03
+[120,] 1.167607e-116 9.525476e-01 4.745237e-02
+[121,] 8.908688e-182 1.017026e-06 9.999990e-01
+[122,] 1.679110e-126 2.689576e-06 9.999973e-01
+[123,] 2.910763e-241 9.998623e-01 1.377330e-04
+[124,] 2.249528e-119 2.578344e-02 9.742166e-01
+[125,] 6.059642e-168 6.993069e-03 9.930069e-01
+[126,] 3.131623e-176 9.786735e-01 2.132652e-02
+[127,] 1.915390e-113 1.020589e-02 9.897941e-01
+[128,] 1.884428e-115 1.344436e-02 9.865556e-01
+[129,] 9.651076e-168 5.679111e-04 9.994321e-01
+[130,] 3.917350e-160 9.613553e-01 3.864472e-02
+[131,] 1.299856e-194 9.900149e-01 9.985101e-03
+[132,] 5.885160e-206 9.999063e-01 9.373703e-05
+[133,] 2.286314e-173 8.494212e-06 9.999915e-01
+[134,] 4.453554e-116 5.347730e-01 4.652270e-01
+[135,] 4.788918e-139 6.731889e-03 9.932681e-01
+[136,] 7.544064e-213 2.227481e-04 9.997773e-01
+[137,] 2.785702e-178 9.824377e-10 1.000000e+00
+[138,] 2.670533e-144 2.337490e-01 7.662510e-01
+[139,] 8.767276e-111 6.183222e-03 9.938168e-01
+[140,] 3.546690e-156 1.462209e-04 9.998538e-01
+[141,] 2.758368e-183 2.771418e-10 1.000000e+00
+[142,] 3.190830e-153 7.082656e-12 1.000000e+00
+[143,] 1.273446e-131 9.817067e-04 9.990183e-01
+[144,] 4.137004e-192 2.084445e-05 9.999792e-01
+[145,] 1.733125e-192 7.541129e-12 1.000000e+00
+[146,] 2.425613e-158 5.457106e-11 1.000000e+00
+[147,] 1.165838e-130 3.499005e-03 9.965010e-01
+[148,] 1.880639e-140 5.320404e-04 9.994680e-01
+[149,] 1.144429e-161 1.250646e-08 1.000000e+00
+[150,] 3.350363e-124 9.380289e-03 9.906197e-01
+
+$cluster
+  [1] 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+ [38] 1 1 1 1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 3 2 2 2 3 2 3 2 3 2 2 3 3 2 2 3 2 2 3
+ [75] 2 2 2 3 3 2 2 2 2 3 3 3 2 2 2 2 3 2 2 2 2 3 2 2 2 2 3 3 3 3 3 2 3 2 2 3 3
+[112] 3 3 3 3 3 3 2 2 2 3 3 2 3 3 2 3 3 3 2 2 2 3 2 3 3 3 3 3 3 3 3 3 3 3 3 3 3
+[149] 3 3
+
+$logLikelihood
+[1] 23.63261
+
+> 
+> table(test$cluster, iris$Species)
+
+    Iris-setosa Iris-versicolor Iris-virginica
+  1          50               0              0
+  2           0              35             12
+  3           0              15             38
+> 
+> #    Iris-setosa Iris-versicolor Iris-virginica
+> #  1          50               0              0
+> #  2           0              49             16
+> #  3           0               1             34
+> library(ggplot2)
+> 
+> png(paste0('D:/Projects/EM-algorithm/plots/em-mgmm-plot-iris-example-', coln$
+> 
+> options(repr.plot.width = 5, repr.plot.height =5)
+> # Scatter plot of clusters
+> ggplot(data = iris, aes(x = iris2$SepalLengthCm, y = iris2$SepalWidthCm, col$
++   geom_point(size = 3) +
++   geom_point(data = as.data.frame(test$mu), aes(x = test$mu[,1], y = test$mu$
++   labs(title = "Scatter Plot of Clusters and Centroids", x = colnames(iris2)$
++   theme(text = element_text(size = 15), aspect.ratio = 1)
+> 
+> dev.off()
+null device 
+          1
+> png(paste0('D:/Projects/EM-algorithm/plots/em-mgmm-plot-iris-example-', coln$
+> 
+> options(repr.plot.width = 5, repr.plot.height =5)
+> # Scatter plot of clusters
+> ggplot(data = iris, aes(x = iris2$PetalLengthCm, y = iris2$PetalWidthCm, col$
++   geom_point(size = 3) +
++   geom_point(data = as.data.frame(test$mu), aes(x = test$mu[,3], y = test$mu$
++   labs(title = "Scatter Plot of Clusters and Centroids", x = colnames(iris2)$
++   theme(text = element_text(size = 15), aspect.ratio = 1)
+> 
+> dev.off()
+null device 
+          1
+>
