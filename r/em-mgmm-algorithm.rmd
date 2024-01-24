@@ -149,7 +149,7 @@ png(paste0('D:/Projects/EM-algorithm/plots/em-mgmm-plot-iris-example-', colnames
 
 options(repr.plot.width = 5, repr.plot.height =5)
 # Scatter plot of clusters
-ggplot(data = iris, aes(x = iris2$SepalLengthCm, y = iris2$SepalWidthCm, color = as.factor(test$cluster))) +
+ggplot(data = iris, aes(x = iris2$PetalLengthCm, y = iris2$PetalWidthCm, color = as.factor(test$cluster))) +
   geom_point(size = 3) +
   geom_point(data = as.data.frame(test$mu), aes(x = test$mu[,3], y = test$mu[,4]), color = "black", size = 4) +
   labs(title = "Scatter Plot of Clusters and Centroids", x = colnames(iris2)[3], y = colnames(iris2)[4]) +
@@ -244,7 +244,7 @@ png(paste0('D:/Projects/EM-algorithm/plots/em-mgmm-plot-mall-customers-example-'
 
 options(repr.plot.width = 5, repr.plot.height =5)
 # Scatter plot of clusters
-ggplot(data = X, aes(x = X[,2], y = X[,3], color = as.factor(c(results$cluster, 1)))) +
+ggplot(data = X, aes(x = X[,2], y = X[,3], color = as.factor(c(results$cluster)))) +
   geom_point(size = 3) +
   geom_point(data = as.data.frame(results$mu), aes(x = results$mu[,2], y = results$mu[,3]), color = "black", size = 4) +
   labs(title = "Scatter Plot of Clusters and Centroids", x = colnames(X)[2], y = colnames(X)[3]) +
@@ -258,7 +258,7 @@ png(paste0('D:/Projects/EM-algorithm/plots/em-mgmm-plot-mall-customers-example-'
 
 options(repr.plot.width = 5, repr.plot.height =5)
 # Scatter plot of clusters
-ggplot(data = X, aes(x = X[,1], y = X[,3], color = as.factor(c(results$cluster, 1)))) +
+ggplot(data = X, aes(x = X[,1], y = X[,3], color = as.factor(c(results$cluster)))) +
   geom_point(size = 3) +
   geom_point(data = as.data.frame(results$mu), aes(x = results$mu[,1], y = results$mu[,3]), color = "black", size = 4) +
   labs(title = "Scatter Plot of Clusters and Centroids", x = colnames(X)[1], y = colnames(X)[3]) +
@@ -272,7 +272,7 @@ png(paste0('D:/Projects/EM-algorithm/plots/em-mgmm-plot-mall-customers-example-'
 
 options(repr.plot.width = 5, repr.plot.height =5)
 # Scatter plot of clusters
-ggplot(data = X, aes(x = X[,1], y = X[,2], color = as.factor(c(results$cluster, 1)))) +
+ggplot(data = X, aes(x = X[,1], y = X[,2], color = as.factor(c(results$cluster)))) +
   geom_point(size = 3) +
   geom_point(data = as.data.frame(results$mu), aes(x = results$mu[,1], y = results$mu[,2]), color = "black", size = 4) +
   labs(title = "Scatter Plot of Clusters and Centroids", x = colnames(X)[1], y = colnames(X)[2]) +
@@ -283,7 +283,7 @@ dev.off()
 
 ##### Comparation with k-means
 ```{R}
-km_data_2 <- kmeans(MallCustomers, 4, nstart=1500) 
+km_data_2 <- kmeans(X, 4, nstart=1500) 
 
 print(km_data_2)
 ```
