@@ -14,10 +14,38 @@ cd EM-algorithm
 
 # Python implementation
 
-After cloning the project, activate the venv:
+After cloning the project, go to the `Python-implementation` folder:
+
+```shell
+cd Python-implementation
+```
+
+Then, create your virutal environment:
+
+**Windows**
+
+```shell
+py -3 -m venv .venv
+```
+
+**MacOS/Linus**
+
+```shell
+python3 -m venv .venv
+```
+
+And, activate it:
+
+**Windows**
 
 ```shell
 .venv\Scripts\activate
+```
+
+**MacOS/Linus**
+
+```shell
+. .venv/bin/activate
 ```
 
 You can run the following command to install the dependencies:
@@ -25,6 +53,7 @@ You can run the following command to install the dependencies:
 ```shell
 pip3 install -r requirements.txt
 ```
+
 **To run the code:**
 1. Select the kernel in the jupyter notebook in the **Python-implementation** folder.
 2. Run the cells.
